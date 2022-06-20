@@ -25,6 +25,8 @@ def GSGD_ANN(filePath):
     n_hidden = 5
     
     scores = evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC)
+    print('Scores: %s' % scores)
+    print('Mean Accuracy: %.3f%%' % (sum(scores)/float(len(scores))))
     
     #have to show some kind od score here and mean accuracy
     
@@ -40,7 +42,12 @@ def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC):
     
 def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs):
     network = initialize_network(n_hidden, n_inputs , n_outputs)
-    train_network(network, x, y, l_rate, n_outputs)
+    for t in range(500):
+        temp = np.append(x,y,axis=1)
+        np.random.shuffle(temp)
+        x = temp[:,:-1] 
+        y = np.array(temp[:,-1], dtype= np.int64).reshape(len(y),1)
+        train_network(network, x, y, l_rate, n_outputs)
     
     predictions_test = list()
     for row in xts:
@@ -80,7 +87,7 @@ def predict(network, row):
 def accuracy_metric(actual, predicted):
 	correct = 0
 	for i in range(len(actual)):
-		if actual[i] == predicted[i]:
+		if actual[i][0] == predicted[i][0]:
 			correct += 1
 	return correct / float(len(actual)) * 100.0
 

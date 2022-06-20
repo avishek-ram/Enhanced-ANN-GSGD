@@ -50,7 +50,7 @@ def readData(file_path):
     getRowsts = len(testing.index)  # get number of rows in training data
     # get number of columns in training data
     getColumnts = len(testing.columns)
-    yts = testing[[d-1]]  # saving the class variable to y [:,:-1]
+    yts = testing[[d]]  # saving the class variable to y [:,:-1]
     # testing[[0,1,2,3,4,5,6,7,8]] #saving the input variables to x (does not contain the leading ones)
     xts = testing.iloc[:, :-1]
     xts = (xts-xts.min())/(xts.max()-xts.min())  # Normalising data
