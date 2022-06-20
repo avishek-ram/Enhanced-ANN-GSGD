@@ -24,35 +24,79 @@ def GSGD_ANN(filePath):
     n_epoch = 500
     n_hidden = 5
     
-    scores = evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC)
+    scores = evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N)
     print('Scores: %s' % scores)
     print('Mean Accuracy: %.3f%%' % (sum(scores)/float(len(scores))))
     
     #have to show some kind od score here and mean accuracy
     
-def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC):
+def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N):
     #scores #have to return this
     scores = list()
-    predicted = algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC)
+    predicted = algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N)
     actual = yts
     accuracy = accuracy_metric(actual, predicted)
     scores.append(accuracy)
     
     return scores
     
-def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs):
-    network = initialize_network(n_hidden, n_inputs , n_outputs)
-    for t in range(500):
-        temp = np.append(x,y,axis=1)
-        np.random.shuffle(temp)
-        x = temp[:,:-1] 
-        y = np.array(temp[:,-1], dtype= np.int64).reshape(len(y),1)
-        train_network(network, x, y, l_rate, n_outputs)
+def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N):
+    #below code is just randomizing and retrainng  temporary
+    #network = initialize_network(n_hidden, n_inputs , n_outputs)
+    # for t in range(500):
+    #     temp = np.append(x,y,axis=1)
+    #     np.random.shuffle(temp)
+    #     x = temp[:,:-1] 
+    #     y = np.array(temp[:,-1], dtype= np.int64).reshape(len(y),1)
+    #     train_network(network, x, y, l_rate, n_outputs)
+    # end
+    
+    #Start GGD implemenattion here
+    pe = math.inf
+    t = 0
+    idx = np.array(np.random.permutation(N-1))
+    idxs = idx
+    T = 1000
+    et = -1
+    E = math.inf
+    for t in range(T):
+        et = et + 1
+        # if not idx[et]:
+        if idx.size == 0:
+            idx = np.random.permutation(N-1)
+            et = 0
+            idxs = idx  
+        
+        curIdx = idx[et]
+        
+        # get initial weights setup for GSGD
+        network_GSGD = initialize_network(n_hidden, n_inputs , n_outputs)
+        train_network(network_GSGD, x[[curIdx],:], y[[curIdx],:], l_rate, n_outputs)
+        NFC = NFC + 1
+        #end
+        
+        er = np.random.permutation(N)
+        er = np.array([er])
+                
+        #get initial SGD weights
+        curIdxs = idxs[0]
+        idxs = np.delete(idxs, 0, axis=0)
+        network_SGD = initialize_network(n_hidden, n_inputs , n_outputs)
+        train_network(network_SGD, x[[curIdxs],:], y[[curIdxs],:], l_rate, n_outputs)
+        SGDnfc = SGDnfc + 1
+        #end
+        
+        ve = 0
+        eSGD = 0
+        
+        #with the initialized weight we will now try to get averaged error value of a few random rows for both
+        for k in er[0]:
+            ve = ve 
     
     predictions_test = list()
-    for row in xts:
-        prediction = predict(network, row)
-        predictions_test.append([prediction])
+    # for row in xts:
+    #     prediction = predict(network, row)
+    #     predictions_test.append([prediction])
     return (predictions_test)
     
 def initialize_network(n_hidden, n_inputs , n_outputs):
