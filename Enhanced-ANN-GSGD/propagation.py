@@ -38,7 +38,7 @@ def backward_propagate_error(network, expected, the_activateds):
             errors =  network[i+1][:-1] @ the_deltas[len(the_deltas) -1]   # network[i+1][:-1] is so that we do not get bias weight which will not be used here (code is removing bias weiths which is at very end)
             print('is not final layer')
         else:
-            errors = np.subtract(the_activateds[i], expected)
+            errors = np.subtract(the_activateds[i], expected) # this error is partial error complete error of neuron is got when multiply this with the derivative of the transfer function
         
         get_transfer_derivative = transfer_derivative(the_activateds[i])
         this_delta = np.multiply(errors, get_transfer_derivative.copy())
