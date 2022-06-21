@@ -11,7 +11,6 @@ from random import seed
 from random import randrange
 from random import random  # check if seed is used or not
 from propagation import *
-from  getError import getError
 
 def GSGD_ANN(filePath):
     # reading data, normalize and spliting into train/test
@@ -57,6 +56,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N):
     t = 0
     idx = np.array(np.random.permutation(N-1))
     idxs = idx
+    NFC = 0
+    SGDnfc = 0
     T = 1000
     et = -1
     E = math.inf
@@ -92,7 +93,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N):
         
         #with the initialized weight we will now try to get averaged error value of a few random rows for both
         for k in er[0]:
-            ve = ve + getError(k, x, y, network_GSGD) 
+            ve = ve + getError(k, x, y, network_GSGD, n_outputs)
+            
     
     predictions_test = list()
     # for row in xts:
@@ -123,12 +125,7 @@ def train_network(network, x, y, l_rate, n_outputs):
         update_weights(network, row, l_rate, the_deltas, the_activateds) 
         #print(x)
 
-def custom_train(network, xinst, yinst, n_outputs): #will get delta/  neuron error
-    the_unactivateds, the_activateds = forward_propagate(network, xinst)
-    expected = [0 for i in range(n_outputs)]
-    expected[yinst[0]] = 1
-    the_deltas =backward_propagate_error(network, np.array(expected), the_activateds)  # all neuron errors
-    return the_deltas
+
 # Make a prediction with a network
 def predict(network, row):
 	unactivated_outputs, activated_output = forward_propagate(network, row)
