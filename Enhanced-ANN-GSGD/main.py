@@ -11,6 +11,11 @@ from random import seed
 from random import randrange
 from random import random  # check if seed is used or not
 from propagation import *
+from getError import getError
+from collectInconsistentInstances import collectInconsistentInstances
+from extractConsistentInstances import extractConsistentInstances
+from validate import *
+from printFinalResults import *
 
 def GSGD_ANN(filePath):
     # reading data, normalize and spliting into train/test
@@ -20,7 +25,7 @@ def GSGD_ANN(filePath):
     seed(1)
     # evaluate algorithm
     n_folds = 10
-    l_rate = 0.3
+    l_rate = 0.1
     n_epoch = 500
     n_hidden = 5
     
@@ -33,10 +38,11 @@ def GSGD_ANN(filePath):
 def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N):
     #scores #have to return this
     scores = list()
-    predicted = algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N)
-    actual = yts
-    accuracy = accuracy_metric(actual, predicted)
-    scores.append(accuracy)
+    algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N)
+    #predicted = algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N)
+    #actual = yts
+    #accuracy = accuracy_metric(actual, predicted)
+    #scores.append(accuracy)
     
     return scores
     
@@ -51,16 +57,45 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N):
     #     train_network(network, x, y, l_rate, n_outputs)
     # end
     
-    #Start GGD implemenattion here
+    #Start GSGD implemenattion here
+    ropeTeamSz = 10  # this is rho. neighborhood size => increase rho value when the dataset is very noisy.
     pe = math.inf
     t = 0
     idx = np.array(np.random.permutation(N-1))
     idxs = idx
     NFC = 0
     SGDnfc = 0
-    T = 1000
     et = -1
     E = math.inf
+    best_E = math.inf
+    
+    class PGW:
+        weights = list()
+        nfc = 0
+        sr = 0
+
+    pocket = PGW()
+    SGDpocket = PGW()
+    
+    plotE = []
+    plotEgens = []
+    plotEout = []
+    plotEin = []
+    PlotEoutSR = []
+
+    plotEoutSRsgd = []
+    plotESGD = []
+    SGDEout = []
+    SGDEin = []
+    plotEgensSGD = []
+
+    bPlot = True
+    
+    #initialize network here / inital weights
+    network_GSGD = initialize_network(n_hidden, n_inputs , n_outputs)
+    network_SGD = initialize_network(n_hidden, n_inputs , n_outputs)
+    
+    T = 1000
     for t in range(T):
         et = et + 1
         # if not idx[et]:
@@ -71,8 +106,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N):
         
         curIdx = idx[et]
         
-        # get initial weights setup for GSGD
-        network_GSGD = initialize_network(n_hidden, n_inputs , n_outputs)
+        # update weights for the iteration
         train_network(network_GSGD, x[[curIdx],:], y[[curIdx],:], l_rate, n_outputs)
         NFC = NFC + 1
         #end
@@ -83,7 +117,6 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N):
         #get initial SGD weights
         curIdxs = idxs[0]
         idxs = np.delete(idxs, 0, axis=0)
-        network_SGD = initialize_network(n_hidden, n_inputs , n_outputs)
         train_network(network_SGD, x[[curIdxs],:], y[[curIdxs],:], l_rate, n_outputs)
         SGDnfc = SGDnfc + 1
         #end
@@ -94,7 +127,80 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N):
         #with the initialized weight we will now try to get averaged error value of a few random rows for both
         for k in er[0]:
             ve = ve + getError(k, x, y, network_GSGD, n_outputs)
+            eSGD = eSGD + getError(k, x, y, network_SGD, n_outputs)
+        
+        ve = ve/len(er[0])
+        eSGD = eSGD/len(er[0])
+        
+        # collect inconsistent instances
+        omPlusScore, omPlusLevel, omMinuScore, omMinusLevel, tmpGuided = collectInconsistentInstances(
+            idx, x, y, network_GSGD, ropeTeamSz, best_E, n_outputs)
+        
+        # extract consistent instances
+        consistentIdx = extractConsistentInstances(
+            ve, best_E, omPlusScore, omPlusLevel, omMinuScore, omMinusLevel)
+        
+        # further refinement
+        for cI in range(len(consistentIdx)):
+            curId = consistentIdx[cI]  # set index to consistentIdx value
+            # W, s, r, gradHist, Whistory, mAdam, vAdam = SGDvariation(t, x[:,[cI]], y[:,[cI]], W, eta, 'cross-entropy','canonical', s,r,gradHist, Whistory, mAdam, vAdam)
+            train_network(network_GSGD, x[[curId],:], y[[curId],:], l_rate, n_outputs)
+            NFC = NFC+1
             
+        if t % ropeTeamSz == 0 or t % tmpGuided == 0:  # or et > idx.size:
+            # print("heeerrre before idx.size ",idx.size)
+            idx = np.delete(idx, np.s_[0:tmpGuided], axis=0)
+            et = -1
+        
+        else:
+            # tmpVals = np.setdiff1d(idx[0:tmpGuided], idx[consistentIdx])
+            tmpVals = np.setdiff1d(idx[0:tmpGuided], idx[consistentIdx])
+            idxArray = np.arange(tmpGuided)
+            inconsistentIdx = np.setdiff1d(idxArray, consistentIdx)
+
+            # remove consistent idx from list to only have inconsistent idx... 0 is an index** CHECK THIS
+            idx = np.delete(idx, inconsistentIdx, axis=0)
+            #print("idx.size ",idx.size) #np.array(0)#
+
+            idx = np.r_[idx, tmpVals]
+            # idx = np.append(idx, tmpVals)
+            # idx = np.hstack((idx, tmpVals))
+        
+        # Plot section
+        if t % 10 == 0 or t == T:
+
+            plotE = np.append(plotE, ve)
+            plotEgens = np.append(plotEgens, t)
+
+            doTerminate, SR, E, pocket = validate(
+                xts, network_GSGD, yts, NFC, pocket, n_outputs)
+
+            SGDdoTerminate, sgdSR, sgdE = validateSGD(
+                xts, network_SGD, yts, n_outputs)
+
+            plotESGD = np.append(plotESGD, eSGD)
+            plotEgensSGD = np.append(plotEgensSGD, t)
+            plotEoutSRsgd = np.append(plotEoutSRsgd, sgdSR)
+
+            SGDEout = np.append(SGDEout, sgdE)
+            SGDEin = np.append(SGDEin, eSGD)
+
+            if doTerminate:
+                break
+
+            plotEin = np.append(plotEin, ve)
+            plotEout = np.append(plotEout, E)
+            PlotEoutSR = np.append(PlotEoutSR, SR)
+    
+    #write plotting code here
+
+    SR, NFC = PrintFinalResults([], pocket, xts, yts, True)
+    sgdSR = PrintFinalResultsSGD(network_SGD, xts, yts)
+
+    print('GSGD: ', SR)
+    print('SGD: ', sgdSR)
+
+    return SR, sgdSR
     
     predictions_test = list()
     # for row in xts:
@@ -124,20 +230,6 @@ def train_network(network, x, y, l_rate, n_outputs):
         the_deltas =backward_propagate_error(network, np.array(expected), the_activateds)
         update_weights(network, row, l_rate, the_deltas, the_activateds) 
         #print(x)
-
-
-# Make a prediction with a network
-def predict(network, row):
-	unactivated_outputs, activated_output = forward_propagate(network, row)
-	return np.argmax(activated_output[-1])
-
-# Calculate accuracy percentage
-def accuracy_metric(actual, predicted):
-	correct = 0
-	for i in range(len(actual)):
-		if actual[i][0] == predicted[i][0]:
-			correct += 1
-	return correct / float(len(actual)) * 100.0
 
 if __name__ == '__main__':
     root = tk.Tk()
