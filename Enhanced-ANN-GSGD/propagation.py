@@ -22,7 +22,7 @@ def forward_propagate(network, row):
 # Transfer neuron activation
 def transfer(non_activated):
     activated = []
-    for i in range(len(non_activated)):
+    for i in non_activated:
         input_activated = 1.0 / (1.0 + exp(-i))
         activated.append(input_activated)
         
@@ -60,13 +60,20 @@ def update_weights(network, row, l_rate, deltas, the_activateds):
         rowscount = layer_input.shape
         #network[i] = np.subtract(network[i], np.multiply(np.array([l_rate for r in range(rowscount[0])]), np.multiply(layer_input.reshape(len(layer_input),1), deltas[i].reshape(1,len(deltas[i])))))  #layer_weights =  layer_weights - l_rate * row * deltas[i]
         
-        old_weights_matrix = network[i]
-        l_rate_matrix =  np.array([l_rate for r in range(rowscount[0])]).reshape(rowscount[0],1)
+        old_weights_matrix = network[i].copy()
+        l_rate_matrix =  np.array([l_rate for r in range(old_weights_matrix.size)]).reshape(old_weights_matrix.shape)
         layer_input_matrix = layer_input.reshape(len(layer_input),1)
         delta_matrix = deltas[i].reshape(1,len(deltas[i]))
         
-        gradient_essent = np.multiply(np.multiply(l_rate_matrix, layer_input_matrix), delta_matrix)
-        network[i] = np.subtract(old_weights_matrix, gradient_essent)
+        #old code
+        #gradient_essent = np.multiply(np.multiply(l_rate_matrix, layer_input_matrix), delta_matrix)
+        #network[i] = np.subtract(old_weights_matrix, gradient_essent)
+        #old code end
         
+        #new way temp = w' = old_weights -  lr * xi * deltaj
+        pt1 = layer_input_matrix @ delta_matrix  # xi * delta;
+        pt2 = np.multiply(pt1,l_rate_matrix)  #lr * xi * deltaj
+        network[i] = np.subtract(old_weights_matrix, pt2)  #yay our new weights
+                
         #print(network[i])
         
