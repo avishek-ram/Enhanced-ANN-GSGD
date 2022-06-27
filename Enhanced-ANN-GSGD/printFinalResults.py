@@ -47,3 +47,29 @@ def PrintFinalResultsSGD(network_SGD, inputVal, givenOut):
     print("Success rate: ", "{:.7f}".format(SR))
 
     return SR
+
+def PrintFinalResults_updated(gr, PocketGoodWeights, inputVal, givenOut, printData, type):
+    truePositive = 0
+    trueNegative = 0
+    falseNegative = 0
+    falsePositive = 0
+    
+    nfc = 0
+    if bool(PocketGoodWeights):
+        for i in range(len(PocketGoodWeights.weights), 0, -1):
+            if len(PocketGoodWeights.weights) != 0:
+                print('--------------------------')
+                w = PocketGoodWeights.weights
+                nfc = PocketGoodWeights.nfc
+    else:
+        w = PocketGoodWeights.weights
+        nfc = 0
+    
+    # print
+    if printData:
+        print("w: ", w)
+        print("gr: ", gr)
+        
+        xval = inputVal
+        the_unactivateds, the_activateds = forward_propagate(PocketGoodWeights.weights, xval)
+        outputs = the_activateds[-1]
