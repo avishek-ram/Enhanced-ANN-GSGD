@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import tkinter as tk
 from tkinter import filedialog
 import os
+import copy
 from math import exp
 from random import seed
 from random import randrange
@@ -24,40 +25,25 @@ def GSGD_ANN(filePath):
     # Test Backprop on Seeds dataset
     seed(1)
     # evaluate algorithm
-    n_folds = 10
     l_rate = 0.1
-    n_epoch = 500
+    n_epoch = 15
     n_hidden = 5
     
-    scores = evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N)
-    print('Scores: %s' % scores)
-    print('Mean Accuracy: %.3f%%' % (sum(scores)/float(len(scores))))
+    scores = evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch)
+    # print('Scores: %s' % scores)
+    # print('Mean Accuracy: %.3f%%' % (sum(scores)/float(len(scores))))
     
     #have to show some kind od score here and mean accuracy
     
-def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N):
+def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch):
     #scores #have to return this
     scores = list()
-    algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N)
-    #predicted = algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N)
-    #actual = yts
-    #accuracy = accuracy_metric(actual, predicted)
-    #scores.append(accuracy)
+    algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, n_epoch)
+    return scores #note update this
     
-    return scores
-    
-def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N):
-    #below code is just randomizing and retrainng  temporary
-    #network = initialize_network(n_hidden, n_inputs , n_outputs)
-    # for t in range(500):
-    #     temp = np.append(x,y,axis=1)
-    #     np.random.shuffle(temp)
-    #     x = temp[:,:-1] 
-    #     y = np.array(temp[:,-1], dtype= np.int64).reshape(len(y),1)
-    #     train_network(network, x, y, l_rate, n_outputs)
-    # end
-    
-    #Start GSGD implemenattion here
+def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n_epoch):
+     
+    #Start GSGD and SGD implemenattion here
     ropeTeamSz = 10  # this is rho. neighborhood size => increase rho value when the dataset is very noisy.
     pe = math.inf
     t = 0
@@ -92,8 +78,14 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N):
     bPlot = True
     
     #initialize network here / inital weights
-    network_GSGD = initialize_network(n_hidden, n_inputs , n_outputs)
     network_SGD = initialize_network(n_hidden, n_inputs , n_outputs)
+    
+    #default weight update
+    for i in range(n_epoch):
+        for j in idx:
+            train_network(network_SGD, x[[j],:], y[[j],:], l_rate, n_outputs)
+
+    network_GSGD = copy.deepcopy(network_SGD) # when starting both should have the same weights
     
     T = 1000
     for t in range(T):
@@ -191,6 +183,9 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N):
             plotEin = np.append(plotEin, ve)
             plotEout = np.append(plotEout, E)
             PlotEoutSR = np.append(PlotEoutSR, SR)
+            print("iteration: "+ str(t))
+            print("Success rate of SGD: "+ str(sgdSR))
+            print("Success rate of GSGD: "+ str(SR)+ "\n")
     
     #write plotting code here
 
@@ -201,12 +196,6 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N):
     print('SGD: ', sgdSR)
 
     return SR, sgdSR
-    
-    predictions_test = list()
-    # for row in xts:
-    #     prediction = predict(network, row)
-    #     predictions_test.append([prediction])
-    return (predictions_test)
     
 def initialize_network(n_hidden, n_inputs , n_outputs):
     this_network = list()
@@ -222,14 +211,12 @@ def initialize_network(n_hidden, n_inputs , n_outputs):
     return this_network
 
 def train_network(network, x, y, l_rate, n_outputs):
-    hot_encoded_labels = []
     for row, row_label in zip(x,y):
         the_unactivateds, the_activateds = forward_propagate(network, row)
         expected = [0 for i in range(n_outputs)]
         expected[row_label[0]] = 1
-        the_deltas =backward_propagate_error(network, np.array(expected), the_activateds)
+        the_deltas = backward_propagate_error(network, np.array(expected), the_activateds)
         update_weights(network, row, l_rate, the_deltas, the_activateds) 
-        #print(x)
 
 if __name__ == '__main__':
     root = tk.Tk()
