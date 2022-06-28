@@ -5,7 +5,6 @@ import os
 from math import exp
 from propagation import forward_propagate, backward_propagate_error
 
-#custom code
 def custom_train(network, xinst, yinst, n_outputs):
     the_unactivateds, the_activateds = forward_propagate(network, xinst)
     outputs = the_activateds[-1]

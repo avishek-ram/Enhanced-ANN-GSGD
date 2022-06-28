@@ -3,16 +3,13 @@ import pandas as pd
 import math
 import os
 from math import exp
-from random import seed
-from random import randrange
-from random import random  # check if seed is used or not
 
 def forward_propagate(network, row):
     the_unactivateds = []
     the_activateds = []
     for layer in network:
         row = np.append(row, np.ones((1,),dtype=np.float64),axis=0)  #adding bias to input
-        non_activated = row.T @ layer  # i think this needs to be updated to exclude bias or something sortof
+        non_activated = row.T @ layer
         row = transfer(non_activated)
         the_unactivateds.append(non_activated.copy())
         the_activateds.append(row.copy())
@@ -33,10 +30,9 @@ def backward_propagate_error(network, expected, the_activateds):
     for i in reversed(range(len(network))):
         errors = list()
         if i != len(network)-1:
-            #error = network[i+1] @ the_deltas[len(the_deltas)-1]    ## only claculate the error for the weights that is coming from successer layer neuron to the neuron in this preceding layer       update this
-            errors =  network[i+1][:-1] @ the_deltas[len(the_deltas) -1]   # network[i+1][:-1] is so that we do not get bias weight which will not be used here (code is removing bias weiths which is at very end)
+            errors =  network[i+1][:-1] @ the_deltas[len(the_deltas) -1]   # network[i+1][:-1] is so that we do not get bias weight which will not be used here (code is removing bias weights which is at very end)
         else:
-            errors = np.subtract(the_activateds[i], expected) # this error is partial error complete error of neuron is got when multiply this with the derivative of the transfer function
+            errors = np.subtract(the_activateds[i], expected)
         
         get_transfer_derivative = transfer_derivative(the_activateds[i])
         this_delta = np.multiply(errors, get_transfer_derivative.copy())
@@ -64,5 +60,4 @@ def update_weights(network, row, l_rate, deltas, the_activateds):
         step1 = layer_input_matrix @ delta_matrix  # xi * delta;
         step2 = np.multiply(step1,l_rate_matrix)  #lr * xi * deltaj
         network[i] = np.subtract(old_weights_matrix, step2)  # new weights
-        #return (weight is updated directly in reference)
         

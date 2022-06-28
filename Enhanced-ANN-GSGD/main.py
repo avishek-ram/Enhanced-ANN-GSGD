@@ -9,8 +9,6 @@ import os
 import copy
 from math import exp
 from random import seed
-from random import randrange
-from random import random  # check if seed is used or not
 from propagation import *
 from getError import getError
 from collectInconsistentInstances import collectInconsistentInstances
@@ -22,7 +20,6 @@ def GSGD_ANN(filePath):
     # reading data, normalize and spliting into train/test
     NC, x, y, N, d, xts, yts = readData(filePath)
 
-    # Test Backprop on Seeds dataset
     seed(1)
     # evaluate algorithm
     l_rate = 0.5
@@ -30,11 +27,7 @@ def GSGD_ANN(filePath):
     n_hidden = 5
     
     scores = evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath)
-    # print('Scores: %s' % scores)
-    # print('Mean Accuracy: %.3f%%' % (sum(scores)/float(len(scores))))
-    
-    #have to show some kind od score here and mean accuracy
-    
+        
 def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath):
     #scores #have to return this
     scores = list()
@@ -156,7 +149,6 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                 NFC = NFC+1
                 
             if t % ropeTeamSz == 0 or t % tmpGuided == 0:  # or et > idx.size:
-                # print("heeerrre before idx.size ",idx.size)
                 idx = np.delete(idx, np.s_[0:tmpGuided], axis=0)
                 et = -1
             
@@ -168,11 +160,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
 
                 # remove consistent idx from list to only have inconsistent idx... 0 is an index** 
                 idx = np.delete(idx, inconsistentIdx, axis=0)
-                #print("idx.size ",idx.size) #np.array(0)#
 
                 idx = np.r_[idx, tmpVals]
-                # idx = np.append(idx, tmpVals)
-                # idx = np.hstack((idx, tmpVals))
             
             # Plot section
             if t % 10 == 0 or t == T:

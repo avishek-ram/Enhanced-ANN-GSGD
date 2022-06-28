@@ -22,8 +22,7 @@ def PrintFinalResults(gr, PocketGoodWeights, inputVal, givenOut, printData):
     predicted = get_predictions(w, xval)
     actual = givenOut
     totCorrect = accuracy_metric(actual, predicted)
-        
-    # SR code can be reused
+    
     
     SR = totCorrect/len(xval[:,1]) * 100  # get num of cols
     print("Success rate: ", "{:.7f}".format(SR))
@@ -43,7 +42,7 @@ def PrintFinalResultsSGD(network_SGD, inputVal, givenOut):
         
     # SR code can be reused
     
-    SR = totCorrect/len(xval[:,1]) * 100  # get num of cols
+    SR = totCorrect/len(xval[:,1]) * 100 
     print("Success rate: ", "{:.7f}".format(SR))
 
     return SR
@@ -96,7 +95,7 @@ def PrintFinalResults_updated(gr, PocketGoodWeights, inputVal, givenOut, printDa
                 if i != row:
                     trueNegative += confusion_matrix[i,i]
             
-            SR = totCorrect/len(xval[:,1]) # get num of cols
+            SR = totCorrect/len(xval[:,1]) 
             print("Success rate: ", "{:.2f}".format(SR))
             print("On iteration: ", nfc)
 

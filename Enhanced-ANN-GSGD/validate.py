@@ -14,12 +14,8 @@ def validate(inputVal, network, givenOut, nfc, pocket, n_outputs):
     predicted = get_predictions(network, xval)
     actual = givenOut
     totCorrect = accuracy_metric(actual, predicted)
-        
-    # SR code can be reused
     
-    # SR = totCorrect/np.size(xval, 1)  # get num of cols
-    SR = totCorrect/len(xval[:,1])  #avishek has changed this
-    #print("pocket weights", pocket.weights )
+    SR = totCorrect/len(xval[:,1])  
 
     if SR > 0.5:
         if len(pocket.weights) == 0:  # try:
@@ -43,11 +39,9 @@ def validate(inputVal, network, givenOut, nfc, pocket, n_outputs):
         else:
             False
 
-    N = np.size(inputVal, axis=0)  # number of cols    # avishek has changed axis here
+    N = np.size(inputVal, axis=0)  # number of cols    
     E = 0
     for IN in range(N):
-        # " %check this" from Matlab code
-        # nErr = getError(IN, inputVal, givenOut, W, type)
         nErr = getError(IN, inputVal, givenOut, network, n_outputs)
         E = E + nErr
 
@@ -65,16 +59,11 @@ def validateSGD(inputVal, network, givenOut, n_outputs):
     actual = givenOut
     totCorrect = accuracy_metric(actual, predicted)
         
-    # SR code can be reused
-    
-    #print("predicted val=====", predictedVal)
-    
     SR = totCorrect/len(xval[:,1])
 
     N = np.size(inputVal, axis=0)  # number of cols
     E = 0
     for IN in range(N):
-        # " %check this" from Matlab code
         nErr = getError(IN, inputVal, givenOut, network, n_outputs)
         E = E + nErr
 
@@ -94,7 +83,7 @@ def accuracy_metric(actual, predicted):
 	for i in range(len(actual)):
 		if actual[i][0] == predicted[i][0]:
 			correct += 1
-	return correct  #correct / float(len(actual)) * 100.0
+	return correct  
 
 
 def get_predictions(network, xts):

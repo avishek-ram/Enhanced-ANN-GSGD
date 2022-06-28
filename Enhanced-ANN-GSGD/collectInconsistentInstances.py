@@ -16,10 +16,7 @@ def collectInconsistentInstances(idx, x, y, network_GSGD, ropeTeamSz, pe, n_outp
 
     for j in range(0, min(ropeTeamSz, idx.size)):
         tmpGuided = tmpGuided+1
-        nErr = getError(idx[j], x, y, network_GSGD, n_outputs)#idx[j], x, y, w)
-        # print('------------------------------')
-        #print('nErr: ', nErr)
-        #print('pe: ', pe)
+        nErr = getError(idx[j], x, y, network_GSGD, n_outputs)
         if nErr > pe:
             omPlusScore[:, j] = omPlusScore[:, j] + 1
             omPlusLevel[:, j] = omPlusLevel[:, j] + (nErr - pe)
