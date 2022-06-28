@@ -25,8 +25,8 @@ def GSGD_ANN(filePath):
     # Test Backprop on Seeds dataset
     seed(1)
     # evaluate algorithm
-    l_rate = 0.1
-    n_epoch = 15
+    l_rate = 0.5
+    n_epoch = 1
     n_hidden = 5
     
     scores = evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath)
@@ -39,7 +39,7 @@ def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n
     #scores #have to return this
     scores = list()
     algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, n_epoch, filePath)
-    return scores #note update this
+    return scores 
     
 def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n_epoch, filePath):
      
@@ -132,7 +132,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             ve = 0
             eSGD = 0
             
-            #with the initialized weight we will now try to get averaged error value of a few random rows for both
+            #with the initialized weight we will now try to get averaged error value of  random rows for both
             for k in er[0]:
                 ve = ve + getError(k, x, y, network_GSGD, n_outputs)
                 eSGD = eSGD + getError(k, x, y, network_SGD, n_outputs)
@@ -166,7 +166,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                 idxArray = np.arange(tmpGuided)
                 inconsistentIdx = np.setdiff1d(idxArray, consistentIdx)
 
-                # remove consistent idx from list to only have inconsistent idx... 0 is an index** CHECK THIS
+                # remove consistent idx from list to only have inconsistent idx... 0 is an index** 
                 idx = np.delete(idx, inconsistentIdx, axis=0)
                 #print("idx.size ",idx.size) #np.array(0)#
 
@@ -217,7 +217,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         plt.legend(loc=2)
 
         plt.show()
-    SR, NFC = PrintFinalResults_updated([], pocket, xts, yts, True)
+    SR, NFC = PrintFinalResults_updated([], pocket, xts, yts, True, n_outputs)
     #SR, NFC = PrintFinalResults([], pocket, xts, yts, True)
     #sgdSR = PrintFinalResultsSGD(network_SGD, xts, yts)
 
