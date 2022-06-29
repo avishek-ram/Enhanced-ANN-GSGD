@@ -111,11 +111,11 @@ def PrintFinalResults_updated(gr, PocketGoodWeights, inputVal, givenOut, printDa
             misclassifiction = (falsePositive+falseNegative) / \
                 (truePositive+trueNegative+falseNegative+falsePositive)
 
-            recall = truePositive / truePositive+falseNegative
+            recall = truePositive / (truePositive+falseNegative)
 
-            precision = truePositive / truePositive+falsePositive
+            precision = truePositive / (truePositive+falsePositive)
 
-            specificity = trueNegative/trueNegative+falsePositive
+            specificity = trueNegative/(trueNegative+falsePositive)
 
             f1score = 2/((1/recall)+(1/precision))
 
