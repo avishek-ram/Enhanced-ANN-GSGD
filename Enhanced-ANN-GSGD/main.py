@@ -23,8 +23,8 @@ def GSGD_ANN(filePath):
     seed(1)
     # evaluate algorithm
     l_rate = 0.5
-    n_epoch = 2
-    n_hidden = 5
+    n_epoch = 16
+    n_hidden = 24
     
     scores = evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath)
         
@@ -96,7 +96,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         plotEgensSGD = []
         #end reset
         et = -1
-        T = 1000
+        T = 3681
         for t in range(T):      
             et = et + 1
             # if not idx[et]:

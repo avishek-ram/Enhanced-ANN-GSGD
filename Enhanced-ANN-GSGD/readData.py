@@ -21,8 +21,8 @@ def readData(file_path):
     N = len(data.index)  # number of rows
     d = len(data.columns)  # number of columns
 
-    training = data.head(math.ceil(N*0.6))  # get the top 60% of rows
-    testing = data.tail(math.floor(N*0.4))  # get the bottom 40% of rows
+    training = data.head(math.ceil(N*0.8))  # get the top 80% of rows
+    testing = data.tail(math.floor(N*0.2))  # get the bottom 20% of rows
 
     getRows = len(training.index)  # get number of rows in training data
     getColumn = len(training.columns)  # get number of columns in training data
