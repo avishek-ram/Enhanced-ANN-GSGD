@@ -24,7 +24,7 @@ def GSGD_ANN(filePath):
     # evaluate algorithm
     l_rate = 0.5
     n_epoch = 16
-    n_hidden = 24
+    n_hidden = 5
     
     scores = evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath)
         
@@ -66,6 +66,10 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
     SGDEout = []
     SGDEin = []
     plotEgensSGD = []
+    SRovertime = []
+    SRSGDOvertime = []
+    GSGDError = []
+    SGDError = []
 
     bPlot = True
     
@@ -96,7 +100,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         plotEgensSGD = []
         #end reset
         et = -1
-        T = 3681
+        T = 4601#3681
         for t in range(T):      
             et = et + 1
             # if not idx[et]:
@@ -132,6 +136,10 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             
             ve = ve/len(er[0])
             eSGD = eSGD/len(er[0])
+            
+            #avishek new
+            if ve < best_E:
+                best_E = ve
             
             # collect inconsistent instances
             omPlusScore, omPlusLevel, omMinuScore, omMinusLevel, tmpGuided = collectInconsistentInstances(
@@ -191,7 +199,10 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                 print("Epoch-"+str(ep+1)+" iteration: "+ str(t))
                 print("Success rate of SGD: "+ str(sgdSR))
                 print("Success rate of GSGD: "+ str(SR)+ "\n")
-    
+        SRovertime.append(SR)
+        SRSGDOvertime.append(sgdSR)
+        GSGDError.append(E)
+        SGDError.append(sgdE)
     #write plotting code here
     if(bPlot):
 
@@ -206,13 +217,35 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         plt.legend(loc=2)
 
         plt.show()
+        
+    if(bPlot):  #temp
+        Epocperm = [ i for i in range(n_epoch+1) if i!=0]
+        plt.figure()
+        plt.plot(Epocperm, SGDError, label='SGD Error', linewidth=1)
+        plt.plot(Epocperm, GSGDError, 'r--', label='GSGD Error', linewidth=1)
+
+        plt.title('Error Convergence of GSGD and SGD - Spambase')
+        plt.xlabel("Epochs")
+        plt.ylabel("Error")
+        plt.legend(loc=2)
+
+        plt.show()
     SR, NFC = PrintFinalResults_updated([], pocket, xts, yts, True, n_outputs)
     #SR, NFC = PrintFinalResults([], pocket, xts, yts, True)
     #sgdSR = PrintFinalResultsSGD(network_SGD, xts, yts)
 
     print('GSGD: ', SR)
     print('SGD: ', sgdSR)
-
+    print("\nSRovertime\n")
+    print(SRovertime)
+    print("SRSGDOvertime\n")
+    print(SRSGDOvertime)
+    
+    print("\nError Over Epochs\n")
+    print("\nGSGD Error over Epoch\n")
+    print(GSGDError)
+    print("\nSGD Error over Epoch\n")
+    print(SGDError)
     return SR, sgdSR
     
 def initialize_network(n_hidden, n_inputs , n_outputs):
