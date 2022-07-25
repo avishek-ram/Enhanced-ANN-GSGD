@@ -46,6 +46,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
     et = -1
     E = math.inf
     best_E = math.inf
+    verfset =  0.3  #percentage of dataset to use for verification
     
     class PGW:
         weights = list()
@@ -75,12 +76,6 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
     
     #initialize network here / inital weights
     network_SGD = initialize_network(n_hidden, n_inputs , n_outputs)
-    
-    #default weight update
-    # for i in range(n_epoch):
-    #     for j in idx:
-    #         train_network(network_SGD, x[[j],:], y[[j],:], l_rate, n_outputs)
-
     network_GSGD = copy.deepcopy(network_SGD) # when starting both should have the same weights
     for ep in range(n_epoch):
         idxs = idx
@@ -100,7 +95,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         plotEgensSGD = []
         #end reset
         et = -1
-        T = 4601#3681
+        T = 457#3681
         for t in range(T):      
             et = et + 1
             # if not idx[et]:
@@ -117,9 +112,10 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             #end
             
             er = np.random.permutation(N)
-            er = np.array([er])
+            verfsetsize = round(N*verfset)
+            er = np.array([er[0:verfsetsize]])
                     
-            #get initial SGD weights
+            #get SGD weights
             curIdxs = idxs[0]
             idxs = np.delete(idxs, 0, axis=0)
             train_network(network_SGD, x[[curIdxs],:], y[[curIdxs],:], l_rate, n_outputs)

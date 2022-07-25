@@ -32,7 +32,7 @@ def backward_propagate_error(network, expected, the_activateds):
         if i != len(network)-1:
             errors =  network[i+1][:-1] @ the_deltas[len(the_deltas) -1]   # network[i+1][:-1] is so that we do not get bias weight which will not be used here (code is removing bias weights which is at very end)
         else:
-            errors = np.subtract(the_activateds[i], expected)
+            errors = np.subtract(the_activateds[i], expected)    #this is the derivative of the Mean Squared Error function f'(MSE) =  actual - predicted ; MSE = 1/2 * sum(actual - predicted)^2
         
         get_transfer_derivative = transfer_derivative(the_activateds[i])
         this_delta = np.multiply(errors, get_transfer_derivative.copy())
