@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import math
 import os
+import copy
 from math import exp
 
 def forward_propagate(network, row):
@@ -18,12 +19,15 @@ def forward_propagate(network, row):
         
 # Transfer neuron activation
 def transfer(non_activated):
-    activated = []
-    for i in non_activated:
-        input_activated = 1.0 / (1.0 + exp(-i))
-        activated.append(input_activated)
-        
-    return np.array(activated)
+    # activated = []
+    # for i in non_activated:
+    #     input_activated = 1.0 / (1.0 + exp(-i))
+    #     activated.append(input_activated)
+    # return np.array(activated)
+    numerator = np.ones(shape=non_activated.size)
+    denominator = np.add(np.ones(shape=non_activated.size), np.exp(-1 * non_activated))
+    activation_matrix = np.divide(numerator, denominator)  #sigmoid function
+    return activation_matrix
 
 def backward_propagate_error(network, expected, the_activateds):
     the_deltas = list()
@@ -45,13 +49,13 @@ def transfer_derivative(the_activateds_layer):
     resp = np.multiply(the_activateds_layer,subtracted_value)
     return resp
 
-def update_weights(network, row, l_rate, deltas, the_activateds):
+def update_weights(network, row, l_rate, deltas, the_activateds, lamda, d):
     for i in range(len(network)):
         layer_input = np.append(row, np.ones((1,),dtype=np.float64),axis=0)  #adding bias to input
         if i > 0:
             layer_input = np.append(the_activateds[i-1], np.ones((1,),dtype=np.float64),axis=0)  #adding bias to input
 
-        old_weights_matrix = network[i].copy()
+        old_weights_matrix = copy.deepcopy(network[i])
         l_rate_matrix =  np.array([l_rate for r in range(old_weights_matrix.size)]).reshape(old_weights_matrix.shape)
         layer_input_matrix = layer_input.reshape(len(layer_input),1)
         delta_matrix = deltas[i].reshape(1,len(deltas[i]))
@@ -59,5 +63,7 @@ def update_weights(network, row, l_rate, deltas, the_activateds):
         #formula-> weights = w' = old_weights -  lr * xi * deltaj
         step1 = layer_input_matrix @ delta_matrix  # xi * delta;
         step2 = np.multiply(step1,l_rate_matrix)  #lr * xi * deltaj
-        network[i] = np.subtract(old_weights_matrix, step2)  # new weights
+        default_weights = np.subtract(old_weights_matrix, step2)
+        #network[i] = np.subtract(old_weights_matrix, step2)  # new weights nonregularized
+        network[i] = np.add(default_weights,((np.float64(lamda)/np.float64(d)) * old_weights_matrix))   #new Weights- Regularized using L2
         

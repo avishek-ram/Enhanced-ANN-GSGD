@@ -21,20 +21,21 @@ def GSGD_ANN(filePath):
     NC, x, y, N, d, xts, yts = readData(filePath)
 
     seed(1)
-    # evaluate algorithm
+    
+    #model parameters
     l_rate = 0.5
-    n_epoch = 16
+    n_epoch = 15
     n_hidden = 5
+    lamda = 0.0001  #Lambda will be used for regularizaion
+    verfset =  0.3  #percentage of dataset to use for verification
     
-    scores = evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath)
+    # evaluate algorithm
+    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset)
         
-def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath):
-    #scores #have to return this
-    scores = list()
-    algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, n_epoch, filePath)
-    return scores 
+def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset):
+    algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset)
     
-def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n_epoch, filePath):
+def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n_epoch, filePath, lamda, verfset):
      
     #Start GSGD and SGD implemenattion here
     ropeTeamSz = 10  # this is rho. neighborhood size => increase rho value when the dataset is very noisy.
@@ -46,15 +47,13 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
     et = -1
     E = math.inf
     best_E = math.inf
-    verfset =  0.3  #percentage of dataset to use for verification
-    
+        
     class PGW:
         weights = list()
         nfc = 0
         sr = 0
 
     pocket = PGW()
-    SGDpocket = PGW()
     
     plotE = []
     plotEgens = []
@@ -107,7 +106,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             curIdx = idx[et]
             
             # update weights for the iteration
-            train_network(network_GSGD, x[[curIdx],:], y[[curIdx],:], l_rate, n_outputs)
+            train_network(network_GSGD, x[[curIdx],:], y[[curIdx],:], l_rate, n_outputs, lamda, n_inputs)
             NFC = NFC + 1
             #end
             
@@ -118,7 +117,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             #get SGD weights
             curIdxs = idxs[0]
             idxs = np.delete(idxs, 0, axis=0)
-            train_network(network_SGD, x[[curIdxs],:], y[[curIdxs],:], l_rate, n_outputs)
+            train_network(network_SGD, x[[curIdxs],:], y[[curIdxs],:], l_rate, n_outputs, lamda, n_inputs)
             SGDnfc = SGDnfc + 1
             #end
             
@@ -133,7 +132,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             ve = ve/len(er[0])
             eSGD = eSGD/len(er[0])
             
-            #avishek new
+            # update best_E new code
             if ve < best_E:
                 best_E = ve
             
@@ -149,7 +148,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             for cI in range(len(consistentIdx)):
                 curId = consistentIdx[cI]  # set index to consistentIdx value
                 # W, s, r, gradHist, Whistory, mAdam, vAdam = SGDvariation(t, x[:,[cI]], y[:,[cI]], W, eta, 'cross-entropy','canonical', s,r,gradHist, Whistory, mAdam, vAdam)
-                train_network(network_GSGD, x[[curId],:], y[[curId],:], l_rate, n_outputs)
+                train_network(network_GSGD, x[[curId],:], y[[curId],:], l_rate, n_outputs, lamda, n_inputs)
                 NFC = NFC+1
                 
             if t % ropeTeamSz == 0 or t % tmpGuided == 0:  # or et > idx.size:
@@ -257,13 +256,13 @@ def initialize_network(n_hidden, n_inputs , n_outputs):
     
     return this_network
 
-def train_network(network, x, y, l_rate, n_outputs):
+def train_network(network, x, y, l_rate, n_outputs, lamda, n_inputs):
     for row, row_label in zip(x,y):
         the_unactivateds, the_activateds = forward_propagate(network, row)
         expected = [0 for i in range(n_outputs)]
         expected[row_label[0]] = 1
         the_deltas = backward_propagate_error(network, np.array(expected), the_activateds)
-        update_weights(network, row, l_rate, the_deltas, the_activateds) 
+        update_weights(network, row, l_rate, the_deltas, the_activateds, lamda, n_inputs) 
 
 if __name__ == '__main__':
     root = tk.Tk()
