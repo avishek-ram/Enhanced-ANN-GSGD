@@ -25,9 +25,9 @@ def GSGD_ANN(filePath):
     #model parameters
     l_rate = 0.5
     n_epoch = 15
-    n_hidden = 5
-    lamda = 0.0001  #Lambda will be used for regularizaion
-    verfset =  0.3  #percentage of dataset to use for verification
+    n_hidden = 1
+    lamda = 0.00001  #Lambda will be used for regularizaion
+    verfset =  0.1  #percentage of dataset to use for verification  #use 0.010 for stroke A
     
     # evaluate algorithm
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset)
@@ -94,7 +94,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         plotEgensSGD = []
         #end reset
         et = -1
-        T = 457#3681
+        T = 900#3681
         for t in range(T):      
             et = et + 1
             # if not idx[et]:
@@ -133,8 +133,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             eSGD = eSGD/len(er[0])
             
             # update best_E new code
-            if ve < best_E:
-                best_E = ve
+            # if ve < best_E:
+            #     best_E = ve
             
             # collect inconsistent instances
             omPlusScore, omPlusLevel, omMinuScore, omMinusLevel, tmpGuided = collectInconsistentInstances(
@@ -219,7 +219,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         plt.plot(Epocperm, SGDError, label='SGD Error', linewidth=1)
         plt.plot(Epocperm, GSGDError, 'r--', label='GSGD Error', linewidth=1)
 
-        plt.title('Error Convergence of GSGD and SGD - Spambase')
+        plt.title('Error Convergence of GSGD and SGD')
         plt.xlabel("Epochs")
         plt.ylabel("Error")
         plt.legend(loc=2)
