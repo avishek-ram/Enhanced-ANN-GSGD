@@ -26,8 +26,8 @@ def GSGD_ANN(filePath):
     l_rate = 0.5
     n_epoch = 15
     n_hidden = 1
-    lamda = 0.00001  #Lambda will be used for regularizaion
-    verfset =  0.1  #percentage of dataset to use for verification  #use 0.010 for stroke A
+    lamda = 0.0001  #Lambda will be used for regularizaion
+    verfset =  0.01  #percentage of dataset to use for verification; Decrease this value for large datasets
     
     # evaluate algorithm
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset)
@@ -94,7 +94,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         plotEgensSGD = []
         #end reset
         et = -1
-        T = 900#3681
+        T = 1000#3681
         for t in range(T):      
             et = et + 1
             # if not idx[et]:
@@ -132,7 +132,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             ve = ve/len(er[0])
             eSGD = eSGD/len(er[0])
             
-            # update best_E new code
+            # update best_E new code draft
             # if ve < best_E:
             #     best_E = ve
             
@@ -198,6 +198,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         SRSGDOvertime.append(sgdSR)
         GSGDError.append(E)
         SGDError.append(sgdE)
+        #best_E= math.inf # draft code
     #write plotting code here
     if(bPlot):
 
@@ -231,16 +232,18 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
 
     print('GSGD: ', SR)
     print('SGD: ', sgdSR)
-    print("\nSRovertime\n")
-    print(SRovertime)
-    print("SRSGDOvertime\n")
-    print(SRSGDOvertime)
+    #auditing code
+    # print("\nSRovertime\n")
+    # print(SRovertime)
+    # print("SRSGDOvertime\n")
+    # print(SRSGDOvertime)
     
-    print("\nError Over Epochs\n")
-    print("\nGSGD Error over Epoch\n")
-    print(GSGDError)
-    print("\nSGD Error over Epoch\n")
-    print(SGDError)
+    #auditing code
+    # print("\nError Over Epochs\n")
+    # print("\nGSGD Error over Epoch\n")
+    # print(GSGDError)
+    # print("\nSGD Error over Epoch\n")
+    # print(SGDError)
     return SR, sgdSR
     
 def initialize_network(n_hidden, n_inputs , n_outputs):
