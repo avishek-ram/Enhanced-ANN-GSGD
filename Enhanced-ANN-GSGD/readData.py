@@ -1,14 +1,8 @@
 import numpy as np
 import pandas as pd
-import math
-import os
-import matplotlib.pyplot as plt
-import tkinter as tk
-from tkinter import filedialog
-from math import exp
-from random import seed
-from random import randrange
-from random import random 
+from imblearn.over_sampling import SMOTE
+from collections import Counter
+from sklearn.model_selection import train_test_split
 
 
 def readData(file_path):
@@ -20,17 +14,30 @@ def readData(file_path):
 
     N = len(data.index)  # number of rows
     d = len(data.columns)  # number of columns
-
-    training = data.head(math.ceil(N*0.8))  # get the top 80% of rows
-    testing = data.tail(math.floor(N*0.2))  # get the bottom 20% of rows
-
-    getRows = len(training.index)  # get number of rows in training data
-    getColumn = len(training.columns)  # get number of columns in training data
-
-    y = training[[d-1]]  # saving the class variable to y
-    # saving the input variables to x (does not contain the leading zeros)
-    x = training.iloc[:, :-1]
-
+    
+    X_train_old, xts, Y_train_old, yts = train_test_split(data.iloc[:, :-1], data[[d-1]] , test_size=0.20, random_state=0)
+    
+    apply_smote_oversampling = True
+    
+    if apply_smote_oversampling:
+        #avishek- start oversampling minority class in training data only
+        
+        #print currnt classification class distribution
+        #counter = Counter(tuple(te) for te in Y_train_old.values)
+        #print(counter)
+        
+        oversample = SMOTE(random_state=20)
+    
+        x, y = oversample.fit_resample(X_train_old,Y_train_old)
+        
+        #print classification class distribution
+        # counter = Counter(tuple(te) for te in y.values)
+        # print(counter)
+        #end
+    else:
+        x = X_train_old
+        y = Y_train_old
+    
     x = (x-x.min())/(x.max()-x.min())  # Normalising data
     x = x.reset_index(drop=True)  # resets the indexes
     # x1s = pd.DataFrame(np.ones((getRows, 1), dtype=int), columns=[
@@ -39,20 +46,12 @@ def readData(file_path):
 
     N = len(x.index)  # update N with training data
     d = len(x.columns)  # update d with training data
-    indices = np.arange(d)  # 0,1,2...(d-1)
 
     x = np.array(x.values.tolist())
     y = np.array(y.values.tolist())
-
+    
     NC = np.max(np.size(np.unique(y)))  # get maximum class value count,
 
-    # testing data
-    getRowsts = len(testing.index)  # get number of rows in training data
-    # get number of columns in training data
-    getColumnts = len(testing.columns)
-    yts = testing[[d]]  # saving the class variable to y [:,:-1]
-    # testing[[0,1,2,3,4,5,6,7,8]] #saving the input variables to x (does not contain the leading ones)
-    xts = testing.iloc[:, :-1]
     xts = (xts-xts.min())/(xts.max()-xts.min())  # Normalising data
     xts = xts.reset_index(drop=True)  # resets the indexes
 
