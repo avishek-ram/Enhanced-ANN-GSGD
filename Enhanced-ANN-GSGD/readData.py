@@ -3,6 +3,7 @@ import pandas as pd
 from imblearn.over_sampling import SMOTE
 from collections import Counter
 from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
 
 
 def readData(file_path):
@@ -37,12 +38,11 @@ def readData(file_path):
     else:
         x = X_train_old
         y = Y_train_old
-    
-    x = (x-x.min())/(x.max()-x.min())  # Normalising data
-    x = x.reset_index(drop=True)  # resets the indexes
-    # x1s = pd.DataFrame(np.ones((getRows, 1), dtype=int), columns=[
-    #                    'ones'])  # create a column of ones
-    # x = x1s.join(x)  # adding ones in the beginning
+      
+    #old preprocessing(normalization) has been removed, sk learn preprocessing has been added, works better with large datasets #avishek
+    min_max_scaler = preprocessing.MinMaxScaler()
+    x_scaled = min_max_scaler.fit_transform(x.values)
+    x = pd.DataFrame(x_scaled)
 
     N = len(x.index)  # update N with training data
     d = len(x.columns)  # update d with training data
@@ -52,15 +52,8 @@ def readData(file_path):
     
     NC = np.max(np.size(np.unique(y)))  # get maximum class value count,
 
-    xts = (xts-xts.min())/(xts.max()-xts.min())  # Normalising data
-    xts = xts.reset_index(drop=True)  # resets the indexes
-
-    # x1sts = pd.DataFrame(np.ones((getRowsts, 1), dtype=int), columns=[
-    #                      'ones'])  # create a column of ones
-    # xts = x1sts.join(xts)  # adding ones in the beginning
-
-    Nts = len(xts.index)  # update N with training data
-    dts = len(xts.columns)  # update d with training data
+    xts_scaled = min_max_scaler.fit_transform(xts.values)
+    xts = pd.DataFrame(xts_scaled)
 
     xts = np.array(xts.values.tolist())
     yts = np.array(yts.values.tolist())

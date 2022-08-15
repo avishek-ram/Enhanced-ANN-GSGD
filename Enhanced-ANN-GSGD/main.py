@@ -23,11 +23,11 @@ def GSGD_ANN(filePath):
     seed(1)
     
     #model parameters
-    l_rate = 0.5
+    l_rate = 0.6
     n_epoch = 15
     n_hidden = 1
-    lamda = 0.0001  #Lambda will be used for regularizaion
-    verfset =  0.01  #percentage of dataset to use for verification; Decrease this value for large datasets
+    lamda = 0.00001  #Lambda will be used for regularizaion
+    verfset =  0.001  #percentage of dataset to use for verification; Decrease this value for large datasets
     
     # evaluate algorithm
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset)
