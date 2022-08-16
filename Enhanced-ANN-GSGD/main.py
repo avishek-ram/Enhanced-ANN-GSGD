@@ -23,11 +23,11 @@ def GSGD_ANN(filePath):
     seed(1)
     
     #model parameters
-    l_rate = 0.6
+    l_rate = 0.5
     n_epoch = 15
     n_hidden = 1
     lamda = 0.00001  #Lambda will be used for regularizaion
-    verfset =  0.001  #percentage of dataset to use for verification; Decrease this value for large datasets
+    verfset =  0.01  #percentage of dataset to use for verification; Decrease this value for large datasets
     
     # evaluate algorithm
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset)
@@ -133,8 +133,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             eSGD = eSGD/len(er[0])
             
             # update best_E new code draft
-            # if ve < best_E:
-            #     best_E = ve
+            if ve < best_E:
+                best_E = ve
             
             # collect inconsistent instances
             omPlusScore, omPlusLevel, omMinuScore, omMinusLevel, tmpGuided = collectInconsistentInstances(
@@ -198,7 +198,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         SRSGDOvertime.append(sgdSR)
         GSGDError.append(E)
         SGDError.append(sgdE)
-        #best_E= math.inf # draft code
+        best_E= math.inf # draft code
     #write plotting code here
     if(bPlot):
 
