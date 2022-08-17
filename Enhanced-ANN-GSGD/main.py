@@ -24,10 +24,10 @@ def GSGD_ANN(filePath):
     
     #model parameters
     l_rate = 0.5
-    n_epoch = 15
+    n_epoch = 30
     n_hidden = 1
     lamda = 0.00001  #Lambda will be used for regularizaion
-    verfset =  0.01  #percentage of dataset to use for verification; Decrease this value for large datasets
+    verfset =  0.0001  #percentage of dataset to use for verification; Decrease this value for large datasets
     
     # evaluate algorithm
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset)
@@ -94,7 +94,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         plotEgensSGD = []
         #end reset
         et = -1
-        T = 1000#3681
+        T = 69000#3681
         for t in range(T):      
             et = et + 1
             # if not idx[et]:
