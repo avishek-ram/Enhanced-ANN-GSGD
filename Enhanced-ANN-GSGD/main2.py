@@ -82,8 +82,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                 if not is_guided:
                     iteration = iteration + 1
                     loopCount = loopCount + 1
-                    x_inst = xts[et, :]
-                    y_inst = xts[:, et]
+                    x_inst = new_X[et, :]
+                    y_inst = new_y[:, et]
                     np.append(dataset_X, x_inst)
                     np.append(dataset_y, y_inst)
 
@@ -91,10 +91,16 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     #2 get loss
                     #3 get gradients, regularize if needed
                     #4 update learnable parameters
-                    #5 update weights of network
+                    #5 update weights of network #maybe we will only have to calculate mew weights and not update the  network
                     #6 update summary (optional)
 
                     #now get verification data loss
+                    veridxperms = np.random.permutation(versetnum-1)
+                    veridxperm = veridxperms[0]
+                    ver_x = verset_x[veridxperm, :]
+                    ver_y = verset_response[:, verset_response]
+                    #calculate loss of this verification instance
+                    
 
 
 
