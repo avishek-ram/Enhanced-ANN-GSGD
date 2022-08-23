@@ -57,8 +57,10 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             shuffled_order = np.random.permutation(N-1)
             et = -1
             updated_N = math.inf
-            dataset_X = copy.deepcopy(xts)
-            dataset_y = copy.deepcopy(yts)
+            new_X = copy.deepcopy(x)
+            new_y = copy.deepcopy(y)
+            dataset_X = np.arrary([])
+            dataset_y = np.arrary([])
             #start training iterations
             while  not is_done and (not StopTrainingFlag):  # might have to remove stopTraining flag, matlab code
                 et +=1
@@ -68,12 +70,12 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                 if getVerificationData:
                     for vercount in range(versetnum):
                         indx = shuffled_order[vercount]
-                        x_inst = dataset_X[indx, :]
-                        y_inst = dataset_y[:, indx]
+                        x_inst = new_X[indx, :]
+                        y_inst = new_y[:, indx]
                         np.append(verset_x, x_inst)
                         np.append(verset_response, y_inst)
-                        np.delete(dataset_X, indx, axis= 0)
-                        np.delete(dataset_y, indx, axis= 1)
+                        np.delete(new_X, indx, axis= 0)
+                        np.delete(new_y, indx, axis= 1)
                     updated_N = N - versetnum
                     getVerificationData = False
                 
@@ -84,6 +86,19 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     y_inst = xts[:, et]
                     np.append(dataset_X, x_inst)
                     np.append(dataset_y, y_inst)
+
+                    #1  get predictions with initaial default random wights.
+                    #2 get loss
+                    #3 get gradients, regularize if needed
+                    #4 update learnable parameters
+                    #5 update weights of network
+                    #6 update summary (optional)
+
+                    #now get verification data loss
+
+
+
+
         
      else: #not guided training
          print("Not Guided Training")

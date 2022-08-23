@@ -26,7 +26,7 @@ def GSGD_ANN(filePath):
     l_rate = 0.5
     n_epoch = 30
     n_hidden = 1
-    lamda = 0.00001  #Lambda will be used for regularizaion
+    lamda = 0.0001  #Lambda will be used for regularizaion
     verfset =  0.0001  #percentage of dataset to use for verification; Decrease this value for large datasets
     
     # evaluate algorithm
@@ -167,7 +167,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                 idx = np.r_[idx, tmpVals]
             
             # Plot section
-            if t % 10 == 0 or t == T:
+            if t % 5000 == 0 or t == T:
 
                 plotE = np.append(plotE, ve)
                 plotEgens = np.append(plotEgens, t)
