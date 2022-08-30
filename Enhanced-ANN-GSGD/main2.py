@@ -137,7 +137,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
 
                     #Check to see if its time for GSGD
                     if (loopCount % rho) == 0:
-                        isGuided = True
+                        is_guided = True
                 else:
                     for k in range(loopCount):
                         np.append(avgBatchLosses, np.mean(psi[k,:]))
@@ -154,33 +154,33 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                             y_inst = dataset_y[:,guidedIdx]
                             #forward propagate 
                             #calculate new gradients
+                            #miniBatchLoss = netloss
+                            #gradients rgularized
+                            # update weights
+                            #update sunmmary
 
+                            #Get Verification Data Loss
+                            verIDX = np.random.permutation(versetnum)[0]
+                            verx = verset_x[verIDX, :]
+                            very = verset_response[: , verIDX]
+                            # forward propagate 
+                            verLoss  #=netLoss of verx
+                            prev_error = verLoss
                     
+                    avgBatchLosses = np.array([])
+                    psi = np.array([])
+                    dataset_X = np.array([])
+                    dataset_y = np.array([])
+                    loopCount = 0  
+                    reVisit = False
+                    isGuided = False
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    
-
-                    
-
-
-
-
+            learnRate #= new learn rate if needed to update
+            #If an interrupt request has been made, break out of the epoch loop
+            if StopTrainingFlag: 
+                break
+        
+        # compute Finish Summary
         
      else: #not guided training
          print("Not Guided Training")
