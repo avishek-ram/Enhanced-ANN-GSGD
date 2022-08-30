@@ -40,15 +40,17 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
      iteration = 0
      StopTrainingFlag = False
      is_done = False
-     is_guided_approach, rho, versetnum,epochs, train_x, N = cache
+     is_guided_approach, rho, versetnum,epochs, revisitNum, N = cache
      
      prev_error = math.inf #set initial error to very large number
      loopCount = 0
      revisit = False
+     avgBatchLosses = np.array([])
      is_guided = False
      
      #start epoch
      x_indexer = 0
+     psi = np.array([])
      if is_guided_approach:
         for epoch in range(epochs):
             getVerificationData = True
@@ -72,8 +74,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                         indx = shuffled_order[vercount]
                         x_inst = new_X[indx, :]
                         y_inst = new_y[:, indx]
-                        np.append(verset_x, x_inst)
-                        np.append(verset_response, y_inst)
+                        np.append(verset_x, x_inst, axis=0)
+                        np.append(verset_response, y_inst, axis=1)
                         np.delete(new_X, indx, axis= 0)
                         np.delete(new_y, indx, axis= 1)
                     updated_N = N - versetnum
@@ -87,7 +89,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     np.append(dataset_X, x_inst)
                     np.append(dataset_y, y_inst)
 
-                    #1  get predictions with initaial default random wights.
+                    #1  get predictions with initial default random wights.
                     #2 get loss
                     #3 get gradients, regularize if needed
                     #4 update learnable parameters
@@ -99,7 +101,81 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     veridxperm = veridxperms[0]
                     ver_x = verset_x[veridxperm, :]
                     ver_y = verset_response[:, verset_response]
-                    #calculate loss of this verification instance
+                    #run foward propagation
+                    #calculate loss of this verification instance  => verloss
+                    pos = 1
+                    if verloss < prev_error:
+                        pos = 2
+                    
+                    #Revist Previous Batches of Data and recalculate their
+                    #losses only. WE DO NOT RE-UPDATE THE ENTIRE NETWORK WEIGHTS HERE. 
+                    #unchecked codes follow
+                    if revisit:
+                        if loopCount == 2:
+                            loopend = loopCount
+                        else:
+                            loopend = (revisitNum - 1) #In loops > 2, revisit previous 2 batches
+                        currentBatchNumber = loopCount
+                        for i in range(loopend, loopCount, -1):
+                            currentBatchNumber = currentBatchNumber - 1
+                            revisit_x =  dataset_X[currentBatchNumber, :]
+                            revisit_y =  dataset_y[:, currentBatchNumber]
+
+                            #forward propagte revisit_x
+                            #Reuse the layers outputs to compute loss of this revisit here => 
+
+                            #previous batch was revisited and loss value is added into the array with previous batch losses
+                            lossofrevisit
+                            np.append(psi[currentBatchNumber, :], lossofrevisit)
+
+                    #All batch error differences are collected into ?(psi).
+                    current_batch_error = prev_error - verLoss
+                    psi[loopCount, :] = current_batch_error
+                    prev_error = verLoss
+
+                    revisit = True
+
+                    #Check to see if its time for GSGD
+                    if (loopCount % rho) == 0:
+                        isGuided = True
+                else:
+                    for k in range(loopCount):
+                        np.append(avgBatchLosses, np.mean(psi[k,:]))
+                    
+                    numel_avgBatch = len(avgBatchLosses)
+                    avgBatchLosses_idxs = np.argsort(avgBatchLosses)[::-1]
+                    avgBatchLosses = avgBatchLosses[avgBatchLosses_idxs]
+
+                    min_repeat = min(rho/2, numel_avgBatch)
+                    for r in range(min_repeat):
+                        if(avgBatchLosses[r, :] > 0):
+                            guidedIdx = avgBatchLosses_idxs(r)
+                            x_inst = dataset_X[guidedIdx,:]
+                            y_inst = dataset_y[:,guidedIdx]
+                            #forward propagate 
+                            #calculate new gradients
+
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    
+
                     
 
 
