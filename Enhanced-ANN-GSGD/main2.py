@@ -1,3 +1,4 @@
+from functools import cache
 from readData import readData
 import numpy as np
 import pandas as pd
@@ -33,7 +34,15 @@ def GSGD_ANN(filePath):
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset)
         
 def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset):
-    algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset)
+    is_guided_approach = True
+    rho = 10
+    versetnum = 10
+    epochs = 20
+    revisitNum = 4
+    network = initialize_network(n_hidden, d , NC)
+    
+    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network
+    algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset,cache)
     
 def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n_epoch, filePath, lamda, verfset, cache):
      #new Implementation  #reference CNN-GSGD
@@ -103,6 +112,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     ver_x = verset_x[[veridxperm], :]
                     ver_y = verset_response[[veridxperm], :]
                     #run foward propagation
+                    verloss = getError(veridxperm, verset_x, verset_response, network, n_outputs)
                     #calculate loss of this verification instance  => verloss
                     pos = 1
                     if verloss < prev_error:
@@ -124,15 +134,14 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
 
                             #forward propagte revisit_x
                             #Reuse the layers outputs to compute loss of this revisit here => 
-
+                            lossofrevisit = getError(currentBatchNumber, dataset_X, dataset_y, network, n_outputs)
                             #previous batch was revisited and loss value is added into the array with previous batch losses
-                            lossofrevisit
                             np.append(psi[currentBatchNumber, :], lossofrevisit)
 
                     #All batch error differences are collected into ?(psi).
-                    current_batch_error = prev_error - verLoss
+                    current_batch_error = prev_error - verloss
                     psi[loopCount, :] = current_batch_error
-                    prev_error = verLoss
+                    prev_error = verloss
 
                     revisit = True
 
@@ -159,13 +168,14 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                             #gradients rgularized
                             # update weights
                             #update sunmmary
+                            train_network(network, x_inst, y_inst, l_rate, n_outputs, lamda, n_inputs)
 
                             #Get Verification Data Loss
                             verIDX = np.random.permutation(versetnum)[0]
                             verx = verset_x[[verIDX], :]
                             very = verset_response[[verIDX], :]
                             # forward propagate 
-                            verLoss  #=netLoss of verx
+                            verLoss  = getError(verIDX, verx, very, network, n_outputs)
                             prev_error = verLoss
                     
                     avgBatchLosses = np.array([])
@@ -176,7 +186,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     reVisit = False
                     isGuided = False
 
-            learnRate #= new learn rate if needed to update
+            #learnRate #= new learn rate if needed to update
             #If an interrupt request has been made, break out of the epoch loop
             if StopTrainingFlag: 
                 break
