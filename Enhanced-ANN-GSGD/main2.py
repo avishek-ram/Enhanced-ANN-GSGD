@@ -40,7 +40,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
      iteration = 0
      StopTrainingFlag = False
      is_done = False
-     is_guided_approach, rho, versetnum,epochs, revisitNum, N = cache
+     is_guided_approach, rho, versetnum,epochs, revisitNum, N, network = cache
      
      prev_error = math.inf #set initial error to very large number
      loopCount = 0
@@ -49,7 +49,6 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
      is_guided = False
      
      #start epoch
-     x_indexer = 0
      psi = np.array([])
      if is_guided_approach:
         for epoch in range(epochs):
@@ -72,8 +71,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                 if getVerificationData:
                     for vercount in range(versetnum):
                         indx = shuffled_order[vercount]
-                        x_inst = new_X[indx, :]
-                        y_inst = new_y[:, indx]
+                        x_inst = new_X[[indx], :]
+                        y_inst = new_y[[indx], :]
                         np.append(verset_x, x_inst, axis=0)
                         np.append(verset_response, y_inst, axis=1)
                         np.delete(new_X, indx, axis= 0)
@@ -84,13 +83,15 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                 if not is_guided:
                     iteration = iteration + 1
                     loopCount = loopCount + 1
-                    x_inst = new_X[et, :]
-                    y_inst = new_y[:, et]
+                    x_inst = new_X[[et], :]
+                    y_inst = new_y[[et], :]
                     np.append(dataset_X, x_inst)
                     np.append(dataset_y, y_inst)
 
                     #1  get predictions with initial default random wights.
+                    train_network(network, x_inst, y_inst, l_rate, n_outputs, lamda, n_inputs)
                     #2 get loss
+                    
                     #3 get gradients, regularize if needed
                     #4 update learnable parameters
                     #5 update weights of network #maybe we will only have to calculate mew weights and not update the  network
@@ -99,8 +100,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     #now get verification data loss
                     veridxperms = np.random.permutation(versetnum-1)
                     veridxperm = veridxperms[0]
-                    ver_x = verset_x[veridxperm, :]
-                    ver_y = verset_response[:, verset_response]
+                    ver_x = verset_x[[veridxperm], :]
+                    ver_y = verset_response[[veridxperm], :]
                     #run foward propagation
                     #calculate loss of this verification instance  => verloss
                     pos = 1
@@ -118,8 +119,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                         currentBatchNumber = loopCount
                         for i in range(loopend, loopCount, -1):
                             currentBatchNumber = currentBatchNumber - 1
-                            revisit_x =  dataset_X[currentBatchNumber, :]
-                            revisit_y =  dataset_y[:, currentBatchNumber]
+                            revisit_x =  dataset_X[[currentBatchNumber], :]
+                            revisit_y =  dataset_y[[currentBatchNumber], :]
 
                             #forward propagte revisit_x
                             #Reuse the layers outputs to compute loss of this revisit here => 
@@ -150,8 +151,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     for r in range(min_repeat):
                         if(avgBatchLosses[r, :] > 0):
                             guidedIdx = avgBatchLosses_idxs(r)
-                            x_inst = dataset_X[guidedIdx,:]
-                            y_inst = dataset_y[:,guidedIdx]
+                            x_inst = dataset_X[[guidedIdx],:]
+                            y_inst = dataset_y[[guidedIdx],:]
                             #forward propagate 
                             #calculate new gradients
                             #miniBatchLoss = netloss
@@ -161,8 +162,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
 
                             #Get Verification Data Loss
                             verIDX = np.random.permutation(versetnum)[0]
-                            verx = verset_x[verIDX, :]
-                            very = verset_response[: , verIDX]
+                            verx = verset_x[[verIDX], :]
+                            very = verset_response[[verIDX], :]
                             # forward propagate 
                             verLoss  #=netLoss of verx
                             prev_error = verLoss
@@ -183,10 +184,10 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
         # compute Finish Summary
         
      else: #not guided training
-         print("Not Guided Training")
+        print("Not Guided Training")
      
      
-     #old code
+    #old code
     #Start GSGD and SGD implemenattion here
     # ropeTeamSz = 10  # this is rho. neighborhood size => increase rho value when the dataset is very noisy.
     # pe = math.inf
