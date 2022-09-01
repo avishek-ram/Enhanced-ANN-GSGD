@@ -62,15 +62,15 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
      if is_guided_approach:
         for epoch in range(epochs):
             getVerificationData = True
-            verset_x = np.array([])
-            verset_response = np.array([])
+            verset_x = []
+            verset_response = []
             shuffled_order = np.random.permutation(N-1)
             et = -1
             updated_N = math.inf
             new_X = copy.deepcopy(x)
             new_y = copy.deepcopy(y)
-            dataset_X = np.arrary([])
-            dataset_y = np.arrary([])
+            dataset_X = np.array([])
+            dataset_y = np.array([])
             #start training iterations
             while  not is_done and (not StopTrainingFlag):  # might have to remove stopTraining flag, matlab code
                 et +=1
@@ -82,8 +82,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                         indx = shuffled_order[vercount]
                         x_inst = new_X[[indx], :]
                         y_inst = new_y[[indx], :]
-                        np.append(verset_x, x_inst, axis=0)
-                        np.append(verset_response, y_inst, axis=1)
+                        verset_x.append(x_inst)#np.append(verset_x, x_inst, axis=0)
+                        verset_response.append(y_inst)#np.append(verset_response, y_inst, axis=0)
                         np.delete(new_X, indx, axis= 0)
                         np.delete(new_y, indx, axis= 1)
                     updated_N = N - versetnum
