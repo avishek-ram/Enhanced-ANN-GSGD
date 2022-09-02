@@ -52,13 +52,13 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
      is_guided_approach, rho, versetnum,epochs, revisitNum, N, network = cache
      
      prev_error = math.inf #set initial error to very large number
-     loopCount = 0
+     loopCount = -1
      revisit = False
      avgBatchLosses = np.array([])
      is_guided = False
      
      #start epoch
-     psi = np.array([])
+     psi = []
      if is_guided_approach:
         for epoch in range(epochs):
             getVerificationData = True
@@ -85,8 +85,10 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                         verset_x.append(x_inst)#np.append(verset_x, x_inst, axis=0)
                         verset_response.append(y_inst)#np.append(verset_response, y_inst, axis=0)
                         np.delete(new_X, indx, axis= 0)
-                        np.delete(new_y, indx, axis= 1)
+                        np.delete(new_y, indx, axis= 0)
                     updated_N = N - versetnum
+                    verset_x  = np.array(verset_x).reshape(versetnum, n_inputs)
+                    verset_response = np.array(verset_response).reshape(versetnum, 1)
                     getVerificationData = False
                 
                 if not is_guided:
@@ -94,8 +96,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     loopCount = loopCount + 1
                     x_inst = new_X[[et], :]
                     y_inst = new_y[[et], :]
-                    np.append(dataset_X, x_inst)
-                    np.append(dataset_y, y_inst)
+                    dataset_X = np.append(dataset_X, x_inst)
+                    dataset_y = np.append(dataset_y, y_inst)
 
                     #1  get predictions with initial default random wights.
                     train_network(network, x_inst, y_inst, l_rate, n_outputs, lamda, n_inputs)
@@ -116,13 +118,13 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     #calculate loss of this verification instance  => verloss
                     pos = 1
                     if verloss < prev_error:
-                        pos = 2
+                        pos = -1
                     
                     #Revist Previous Batches of Data and recalculate their
                     #losses only. WE DO NOT RE-UPDATE THE ENTIRE NETWORK WEIGHTS HERE. 
                     #unchecked codes follow
                     if revisit:
-                        if loopCount == 2:
+                        if loopCount == 1:
                             loopend = loopCount
                         else:
                             loopend = (revisitNum - 1) #In loops > 2, revisit previous 2 batches
@@ -135,14 +137,19 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                             #forward propagte revisit_x
                             #Reuse the layers outputs to compute loss of this revisit here => 
                             lossofrevisit = getError(currentBatchNumber, dataset_X, dataset_y, network, n_outputs)
+                            
                             #previous batch was revisited and loss value is added into the array with previous batch losses
-                            np.append(psi[currentBatchNumber, :], lossofrevisit)
+                            #np.append(psi[currentBatchNumber, :], lossofrevisit) old code
+                            psi[currentBatchNumber] = np.append(psi[currentBatchNumber], ((-1 * pos) * (prev_error - lossofrevisit)))
 
                     #All batch error differences are collected into ?(psi).
                     current_batch_error = prev_error - verloss
-                    psi[loopCount, :] = current_batch_error
-                    prev_error = verloss
+                    if loopCount > 0:
+                        psi[loopCount] = current_batch_error
+                    else:
+                        psi.append(current_batch_error)
 
+                    prev_error = verloss
                     revisit = True
 
                     #Check to see if its time for GSGD
@@ -183,8 +190,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     dataset_X = np.array([])
                     dataset_y = np.array([])
                     loopCount = 0  
-                    reVisit = False
-                    isGuided = False
+                    revisit = False
+                    is_guided = False
 
             #learnRate #= new learn rate if needed to update
             #If an interrupt request has been made, break out of the epoch loop
