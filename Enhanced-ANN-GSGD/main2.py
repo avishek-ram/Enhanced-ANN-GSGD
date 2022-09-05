@@ -1,4 +1,3 @@
-from functools import cache
 from readData import readData
 import numpy as np
 import pandas as pd
@@ -46,7 +45,6 @@ def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n
     
 def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n_epoch, filePath, lamda, verfset, cache):
      #new Implementation  #reference CNN-GSGD
-     iteration = 0
      StopTrainingFlag = False
      is_done = False
      is_guided_approach, rho, versetnum,epochs, revisitNum, N, network = cache
@@ -54,7 +52,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
      prev_error = math.inf #set initial error to very large number
      loopCount = -1
      revisit = False
-     avgBatchLosses = np.array([])
+     avgBatchLosses = []
      is_guided = False
      
      #start epoch
@@ -69,8 +67,9 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             updated_N = math.inf
             new_X = copy.deepcopy(x)
             new_y = copy.deepcopy(y)
-            dataset_X = np.array([])
-            dataset_y = np.array([])
+            dataset_X = []
+            dataset_y = []
+            iteration = 0
             #start training iterations
             while  not is_done and (not StopTrainingFlag):  # might have to remove stopTraining flag, matlab code
                 et +=1
@@ -84,8 +83,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                         y_inst = new_y[[indx], :]
                         verset_x.append(x_inst)#np.append(verset_x, x_inst, axis=0)
                         verset_response.append(y_inst)#np.append(verset_response, y_inst, axis=0)
-                        np.delete(new_X, indx, axis= 0)
-                        np.delete(new_y, indx, axis= 0)
+                        new_X = np.delete(new_X, indx, axis= 0)
+                        new_y = np.delete(new_y, indx, axis= 0)
                     updated_N = N - versetnum
                     verset_x  = np.array(verset_x).reshape(versetnum, n_inputs)
                     verset_response = np.array(verset_response).reshape(versetnum, 1)
@@ -96,8 +95,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     loopCount = loopCount + 1
                     x_inst = new_X[[et], :]
                     y_inst = new_y[[et], :]
-                    dataset_X = np.append(dataset_X, x_inst)
-                    dataset_y = np.append(dataset_y, y_inst)
+                    dataset_X.append(x_inst)
+                    dataset_y.append(y_inst)
 
                     #1  get predictions with initial default random wights.
                     train_network(network, x_inst, y_inst, l_rate, n_outputs, lamda, n_inputs)
@@ -124,51 +123,55 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     #losses only. WE DO NOT RE-UPDATE THE ENTIRE NETWORK WEIGHTS HERE. 
                     #unchecked codes follow
                     if revisit:
+                        revisit_dataX = np.array(dataset_X).reshape(len(dataset_X), n_inputs)
+                        revisit_dataY = np.array(dataset_y).reshape(len(dataset_y), 1)
+
                         if loopCount == 1:
                             loopend = loopCount
                         else:
                             loopend = (revisitNum - 1) #In loops > 2, revisit previous 2 batches
-                        currentBatchNumber = loopCount
+                        currentBatchNumber = loopCount - 1
                         for i in range(loopend, loopCount, -1):
                             currentBatchNumber = currentBatchNumber - 1
-                            revisit_x =  dataset_X[[currentBatchNumber], :]
-                            revisit_y =  dataset_y[[currentBatchNumber], :]
 
                             #forward propagte revisit_x
                             #Reuse the layers outputs to compute loss of this revisit here => 
-                            lossofrevisit = getError(currentBatchNumber, dataset_X, dataset_y, network, n_outputs)
+                            lossofrevisit = getError(currentBatchNumber, revisit_dataX, revisit_dataY, network, n_outputs)
                             
                             #previous batch was revisited and loss value is added into the array with previous batch losses
                             #np.append(psi[currentBatchNumber, :], lossofrevisit) old code
-                            psi[currentBatchNumber] = np.append(psi[currentBatchNumber], ((-1 * pos) * (prev_error - lossofrevisit)))
+                            psi[currentBatchNumber] = np.append(psi[currentBatchNumber], ((-1 * pos) * (prev_error - lossofrevisit)))  #have to recheck the axis might need to be specified
 
                     #All batch error differences are collected into ?(psi).
                     current_batch_error = prev_error - verloss
-                    if loopCount > 0:
-                        psi[loopCount] = current_batch_error
-                    else:
-                        psi.append(current_batch_error)
+                    # if (loopCount > 0) and (len(psi) >= loopCount):
+                    #     psi[loopCount] = current_batch_error
+                    # else:
+                    psi.append(current_batch_error)
 
                     prev_error = verloss
                     revisit = True
 
                     #Check to see if its time for GSGD
-                    if (loopCount % rho) == 0:
+                    if (iteration % rho) == 0:
                         is_guided = True
                 else:
                     for k in range(loopCount):
-                        np.append(avgBatchLosses, np.mean(psi[k,:]))
+                        avgBatchLosses = np.append(avgBatchLosses, np.mean(psi[k]))
                     
+                    this_dataX = np.array(dataset_X).reshape(len(dataset_X), n_inputs)
+                    this_dataY = np.array(dataset_y).reshape(len(dataset_y), 1)
+
                     numel_avgBatch = len(avgBatchLosses)
                     avgBatchLosses_idxs = np.argsort(avgBatchLosses)[::-1]
-                    avgBatchLosses = avgBatchLosses[avgBatchLosses_idxs]
+                    avgBatchLosses = avgBatchLosses[avgBatchLosses_idxs] if len(avgBatchLosses_idxs) > 0 else []
 
                     min_repeat = min(rho/2, numel_avgBatch)
-                    for r in range(min_repeat):
-                        if(avgBatchLosses[r, :] > 0):
-                            guidedIdx = avgBatchLosses_idxs(r)
-                            x_inst = dataset_X[[guidedIdx],:]
-                            y_inst = dataset_y[[guidedIdx],:]
+                    for r in range(int(min_repeat)):
+                        if(avgBatchLosses[r] > 0):
+                            guidedIdx = avgBatchLosses_idxs[r]
+                            x_inst = this_dataX[[guidedIdx],:]
+                            y_inst = this_dataY[[guidedIdx],:]
                             #forward propagate 
                             #calculate new gradients
                             #miniBatchLoss = netloss
@@ -182,14 +185,14 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                             verx = verset_x[[verIDX], :]
                             very = verset_response[[verIDX], :]
                             # forward propagate 
-                            verLoss  = getError(verIDX, verx, very, network, n_outputs)
+                            verLoss  = getError(verIDX, verset_x, verset_response, network, n_outputs)
                             prev_error = verLoss
                     
-                    avgBatchLosses = np.array([])
-                    psi = np.array([])
-                    dataset_X = np.array([])
-                    dataset_y = np.array([])
-                    loopCount = 0  
+                    avgBatchLosses = []
+                    psi = []
+                    dataset_X = []
+                    dataset_y = []
+                    loopCount = -1
                     revisit = False
                     is_guided = False
 
