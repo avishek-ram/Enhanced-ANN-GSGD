@@ -26,7 +26,7 @@ def GSGD_ANN(filePath):
     l_rate = 0.5
     n_epoch = 30
     n_hidden = 2
-    lamda = 0.0001  #Lambda will be used for regularizaion
+    lamda = 0.01  #Lambda will be used for regularizaion
     verfset =  0.01  #percentage of dataset to use for verification; Decrease this value for large datasets
     
     # evaluate algorithm
@@ -35,7 +35,7 @@ def GSGD_ANN(filePath):
 def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset):
     is_guided_approach = True
     rho = 10
-    versetnum = 200
+    versetnum = 20
     epochs = 20
     revisitNum = 4
     network = initialize_network(n_hidden, d , NC)
@@ -90,8 +90,6 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                         y_inst = new_y[[indx], :]
                         verset_x.append(x_inst)#np.append(verset_x, x_inst, axis=0)
                         verset_response.append(y_inst)#np.append(verset_response, y_inst, axis=0)
-                        new_X = np.delete(new_X, indx, axis= 0)
-                        new_y = np.delete(new_y, indx, axis= 0)
                     updated_N = N - versetnum
                     verset_x  = np.array(verset_x).reshape(versetnum, n_inputs)
                     verset_response = np.array(verset_response).reshape(versetnum, 1)
