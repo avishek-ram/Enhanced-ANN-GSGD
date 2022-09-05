@@ -24,8 +24,8 @@ def GSGD_ANN(filePath):
     
     #model parameters
     l_rate = 0.5
-    n_epoch = 15
-    n_hidden = 1
+    n_epoch = 30
+    n_hidden = 2
     lamda = 0.0001  #Lambda will be used for regularizaion
     verfset =  0.01  #percentage of dataset to use for verification; Decrease this value for large datasets
     
@@ -35,7 +35,7 @@ def GSGD_ANN(filePath):
 def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset):
     is_guided_approach = True
     rho = 10
-    versetnum = 10
+    versetnum = 200
     epochs = 20
     revisitNum = 4
     network = initialize_network(n_hidden, d , NC)
@@ -55,6 +55,13 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
      avgBatchLosses = []
      is_guided = False
      
+     class PGW:
+        weights = list()
+        nfc = 0
+        sr = 0
+
+     pocket = PGW()
+
      #start epoch
      psi = []
      if is_guided_approach:
@@ -196,15 +203,23 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     revisit = False
                     is_guided = False
 
-            #learnRate #= new learn rate if needed to update
-            #If an interrupt request has been made, break out of the epoch loop
-            if StopTrainingFlag: 
-                break
+             #learnRate #= new learn rate if needed to update
+             #If an interrupt request has been made, break out of the epoch loop
+                if StopTrainingFlag: 
+                    break
+        
+                doTerminate, SR, E, pocket = validate(
+                            xts, network, yts, iteration, pocket, n_outputs)
+
+                print(str(SR))
+                print(str(E))
         
         # compute Finish Summary
         
      else: #not guided training
         print("Not Guided Training")
+    
+     
      
      
     #old code
