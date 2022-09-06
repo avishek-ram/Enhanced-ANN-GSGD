@@ -29,40 +29,51 @@ def GSGD_ANN(filePath):
     lamda = 0.01  #Lambda will be used for regularizaion
     verfset =  0.01  #percentage of dataset to use for verification; Decrease this value for large datasets
     
-    # evaluate algorithm
-    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset)
-        
-def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset):
+    #initialize both networks #should have the same initial weights
+    network_GSGD = initialize_network(n_hidden, d , NC)
+    network_SGD = copy.deepcopy(network_GSGD)
+
+    # evaluate algorithm GSGD
     is_guided_approach = True
-    rho = 10
-    versetnum = 3
+    rho = 7
+    versetnum = 4
     epochs = 20
-    revisitNum = 3
-    network = initialize_network(n_hidden, d , NC)
-    
-    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network
+    revisitNum = 2
+    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD
+    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset, cache)
+
+    # evaluate algorithm SGD
+    is_guided_approach = False
+    epochs = 20 #Different Epoch values can be used since GSGD has better convergence
+    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD
+    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset, cache)
+        
+def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset, cache):   
     algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset,cache)
     
 def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n_epoch, filePath, lamda, verfset, cache):
     #new Implementation  #reference CNN-GSGD
     StopTrainingFlag = False
     is_guided_approach, rho, versetnum, epochs, revisitNum, N, network = cache
-         
+
     class PGW:
         weights = list()
         nfc = 00
         sr = 0
-
+        s_epoch = 0
+        s_iteration = 0
+    
     pocket = PGW()
-
+    pocketSGD = PGW()
+    
     #start epoch
     if is_guided_approach:
+        prev_error = math.inf #set initial error to very large number
         for epoch in range(epochs):
             getVerificationData = True
             verset_x = []
             verset_response = []
             avgBatchLosses = []
-            prev_error = math.inf #set initial error to very large number
             loopCount = -1
             psi = []
             revisit = False
@@ -107,7 +118,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     dataset_X.append(x_inst)
                     dataset_y.append(y_inst)
 
-                    #1  get predictions with initial default random wights.
+                    #1  train Network
                     train_network(network, x_inst, y_inst, l_rate, n_outputs, lamda, n_inputs)
                     #2 get loss
                     
@@ -210,20 +221,44 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     break
         
                 doTerminate, SR, E, pocket = validate(
-                            xts, network, yts, iteration, pocket, n_outputs)
+                            xts, network, yts, iteration, pocket, n_outputs, epoch+1)
 
                 print('Epoch : %s' % str(epoch+1))
                 print('Success Rate: %s' % SR)
                 print('Error Rate: %s' % E)
     
         # compute Finish Summary
-        # print('Pocket Success Rate: %s' % pocket.sr)
-        # print('using pocket weights')
-        # doTerminate, SR, E, pocket = validate(
-        #                     xts, pocket.weights, yts, iteration, pocket, n_outputs)
-        # print('SSRRR: %s' % SR)
+        print('Pocket Success Rate: %s' % pocket.sr)
+        print('success at Epoch: %s' %pocket.s_epoch)
+        print('success at Iteraion: %s' %pocket.s_iteration)
+        print('using pocket weights')
+        doTerminate, SR, E, pocket = validate(
+                            xts, pocket.weights, yts, iteration, pocket, n_outputs, epoch+1)
+        print('SSRRR: %s' % SR)
     else: #not guided training
-        print("Not Guided Training")
+        print("Not Guided Training started")
+        for epoch in range(epochs):
+            shuffled_idxs = np.random.permutation(N-1)
+            iteration = 0
+            for idx in shuffled_idxs:
+                iteration += 1
+                train_network(network, x[[idx],:], y[[idx],:], l_rate, n_outputs, lamda, n_inputs)
+                doTerminate, sgdSR, sgdE, pocketSGD = validate(
+                            xts, network, yts, iteration, pocketSGD, n_outputs, epoch+1)
+
+            # SGDdoTerminate, sgdSR, sgdE = validateSGD(
+            #         xts, network, yts, n_outputs)
+            
+            if(epoch == epochs-1):
+                print("SGD Success Rates: .....")
+                # print('Success Rate: %s' % sgdSR)
+                # print('Error Rate: %s' % sgdE)
+                print('Pocket Success Rate: %s' % pocketSGD.sr)
+                print('success at Epoch: %s' %pocketSGD.s_epoch)
+                print('success at Iteraion: %s' %pocketSGD.s_iteration)
+
+
+        
         
 def initialize_network(n_hidden, n_inputs , n_outputs):
     this_network = list()

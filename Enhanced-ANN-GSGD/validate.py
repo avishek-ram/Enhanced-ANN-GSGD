@@ -6,7 +6,7 @@ from propagation import forward_propagate
 from getError import getError
 
 
-def validate(inputVal, network, givenOut, nfc, pocket, n_outputs):
+def validate(inputVal, network, givenOut, nfc, pocket, n_outputs, epoch):
     xval = inputVal
     doTerminate = False
     
@@ -24,6 +24,8 @@ def validate(inputVal, network, givenOut, nfc, pocket, n_outputs):
             pocket.weights = network
             pocket.sr = SR
             pocket.nfc = nfc
+            pocket.s_epoch = epoch
+            pocket.s_iteration = nfc
 
         # except IndexError:
         else:
@@ -32,6 +34,8 @@ def validate(inputVal, network, givenOut, nfc, pocket, n_outputs):
                 pocket.weights = network
                 pocket.sr = SR
                 pocket.nfc = nfc
+                pocket.s_epoch = epoch
+                pocket.s_iteration = nfc
 
         # print(SR)
         if SR > 110.85:  # percentage defined after decimal. <85% would be 0.85>
