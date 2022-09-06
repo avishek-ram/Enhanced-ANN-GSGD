@@ -35,48 +35,47 @@ def GSGD_ANN(filePath):
 def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset):
     is_guided_approach = True
     rho = 10
-    versetnum = 20
+    versetnum = 3
     epochs = 20
-    revisitNum = 4
+    revisitNum = 3
     network = initialize_network(n_hidden, d , NC)
     
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network
     algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset,cache)
     
 def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n_epoch, filePath, lamda, verfset, cache):
-     #new Implementation  #reference CNN-GSGD
-     StopTrainingFlag = False
-     is_done = False
-     is_guided_approach, rho, versetnum,epochs, revisitNum, N, network = cache
-     
-     prev_error = math.inf #set initial error to very large number
-     loopCount = -1
-     revisit = False
-     avgBatchLosses = []
-     is_guided = False
-     
-     class PGW:
+    #new Implementation  #reference CNN-GSGD
+    StopTrainingFlag = False
+    is_guided_approach, rho, versetnum, epochs, revisitNum, N, network = cache
+         
+    class PGW:
         weights = list()
-        nfc = 0
+        nfc = 00
         sr = 0
 
-     pocket = PGW()
+    pocket = PGW()
 
-     #start epoch
-     psi = []
-     if is_guided_approach:
+    #start epoch
+    if is_guided_approach:
         for epoch in range(epochs):
             getVerificationData = True
             verset_x = []
             verset_response = []
+            avgBatchLosses = []
+            prev_error = math.inf #set initial error to very large number
+            loopCount = -1
+            psi = []
+            revisit = False
+            is_guided = False
             shuffled_order = np.random.permutation(N-1)
             et = -1
-            updated_N = math.inf
+            updated_N = N
             new_X = copy.deepcopy(x)
             new_y = copy.deepcopy(y)
             dataset_X = []
             dataset_y = []
             iteration = 0
+            is_done = False
             #start training iterations
             while  not is_done and (not StopTrainingFlag):  # might have to remove stopTraining flag, matlab code
                 et +=1
@@ -84,8 +83,10 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     is_done = True
                 #Set Verification Data at the beginning of epoch
                 if getVerificationData:
+                    indxToRemove = []
                     for vercount in range(versetnum):
                         indx = shuffled_order[vercount]
+                        indxToRemove.append(indx)
                         x_inst = new_X[[indx], :]
                         y_inst = new_y[[indx], :]
                         verset_x.append(x_inst)#np.append(verset_x, x_inst, axis=0)
@@ -93,6 +94,9 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     updated_N = N - versetnum
                     verset_x  = np.array(verset_x).reshape(versetnum, n_inputs)
                     verset_response = np.array(verset_response).reshape(versetnum, 1)
+                    #update new x and y
+                    new_X = np.delete(new_X, indxToRemove, axis=0)
+                    new_y = np.delete(new_y, indxToRemove, axis=0)
                     getVerificationData = False
                 
                 if not is_guided:
@@ -126,7 +130,6 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     
                     #Revist Previous Batches of Data and recalculate their
                     #losses only. WE DO NOT RE-UPDATE THE ENTIRE NETWORK WEIGHTS HERE. 
-                    #unchecked codes follow
                     if revisit:
                         revisit_dataX = np.array(dataset_X).reshape(len(dataset_X), n_inputs)
                         revisit_dataY = np.array(dataset_y).reshape(len(dataset_y), 1)
@@ -201,235 +204,27 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     revisit = False
                     is_guided = False
 
-             #learnRate #= new learn rate if needed to update
-             #If an interrupt request has been made, break out of the epoch loop
+                    #learnRate #= new learn rate if needed to update
+                    #If an interrupt request has been made, break out of the epoch loop
                 if StopTrainingFlag: 
                     break
         
                 doTerminate, SR, E, pocket = validate(
                             xts, network, yts, iteration, pocket, n_outputs)
 
-                print(str(SR))
-                print(str(E))
-        
+                print('Epoch : %s' % str(epoch+1))
+                print('Success Rate: %s' % SR)
+                print('Error Rate: %s' % E)
+    
         # compute Finish Summary
-        
-     else: #not guided training
+        # print('Pocket Success Rate: %s' % pocket.sr)
+        # print('using pocket weights')
+        # doTerminate, SR, E, pocket = validate(
+        #                     xts, pocket.weights, yts, iteration, pocket, n_outputs)
+        # print('SSRRR: %s' % SR)
+    else: #not guided training
         print("Not Guided Training")
-    
-     
-     
-     
-    #old code
-    #Start GSGD and SGD implemenattion here
-    # ropeTeamSz = 10  # this is rho. neighborhood size => increase rho value when the dataset is very noisy.
-    # pe = math.inf
-    # t = 0
-    # idx = np.array(np.random.permutation(N-1))
-    # NFC = 0
-    # SGDnfc = 0
-    # et = -1
-    # E = math.inf
-    # best_E = math.inf
         
-    # class PGW:
-    #     weights = list()
-    #     nfc = 0
-    #     sr = 0
-
-    # pocket = PGW()
-    
-    # plotE = []
-    # plotEgens = []
-    # plotEout = []
-    # plotEin = []
-    # PlotEoutSR = []
-
-    # plotEoutSRsgd = []
-    # plotESGD = []
-    # SGDEout = []
-    # SGDEin = []
-    # plotEgensSGD = []
-    # SRovertime = []
-    # SRSGDOvertime = []
-    # GSGDError = []
-    # SGDError = []
-
-    # bPlot = True
-    
-    # #initialize network here / inital weights
-    # network_SGD = initialize_network(n_hidden, n_inputs , n_outputs)
-    # network_GSGD = copy.deepcopy(network_SGD) # when starting both should have the same weights
-    # for ep in range(n_epoch):
-    #     idxs = idx
-    #     #reseting the variables here for this epoch
-    #     NFC = 0
-    #     SGDnfc = 0
-    #     plotE = []
-    #     plotEgens = []
-    #     plotEout = []
-    #     plotEin = []
-    #     PlotEoutSR = []
-
-    #     plotEoutSRsgd = []
-    #     plotESGD = []
-    #     SGDEout = []
-    #     SGDEin = []
-    #     plotEgensSGD = []
-    #     #end reset
-    #     et = -1
-    #     T = 1000#3681
-    #     for t in range(T):      
-    #         et = et + 1
-    #         # if not idx[et]:
-    #         if idx.size == 0:
-    #             idx = np.random.permutation(N-1)
-    #             et = 0
-    #             idxs = idx  
-            
-    #         curIdx = idx[et]
-            
-    #         # update weights for the iteration
-    #         train_network(network_GSGD, x[[curIdx],:], y[[curIdx],:], l_rate, n_outputs, lamda, n_inputs)
-    #         NFC = NFC + 1
-    #         #end
-            
-    #         er = np.random.permutation(N)
-    #         verfsetsize = round(N*verfset)
-    #         er = np.array([er[0:verfsetsize]])
-                    
-    #         #get SGD weights
-    #         curIdxs = idxs[0]
-    #         idxs = np.delete(idxs, 0, axis=0)
-    #         train_network(network_SGD, x[[curIdxs],:], y[[curIdxs],:], l_rate, n_outputs, lamda, n_inputs)
-    #         SGDnfc = SGDnfc + 1
-    #         #end
-            
-    #         ve = 0
-    #         eSGD = 0
-            
-    #         #with the initialized weight we will now try to get averaged error value of  random rows for both
-    #         for k in er[0]:
-    #             ve = ve + getError(k, x, y, network_GSGD, n_outputs)
-    #             eSGD = eSGD + getError(k, x, y, network_SGD, n_outputs)
-            
-    #         ve = ve/len(er[0])
-    #         eSGD = eSGD/len(er[0])
-            
-    #         # update best_E new code draft
-    #         # if ve < best_E:
-    #         #     best_E = ve
-            
-    #         # collect inconsistent instances
-    #         omPlusScore, omPlusLevel, omMinuScore, omMinusLevel, tmpGuided = collectInconsistentInstances(
-    #             idx, x, y, network_GSGD, ropeTeamSz, best_E, n_outputs)
-            
-    #         # extract consistent instances
-    #         consistentIdx = extractConsistentInstances(
-    #             ve, best_E, omPlusScore, omPlusLevel, omMinuScore, omMinusLevel)
-            
-    #         # further refinement
-    #         for cI in range(len(consistentIdx)):
-    #             curId = consistentIdx[cI]  # set index to consistentIdx value
-    #             # W, s, r, gradHist, Whistory, mAdam, vAdam = SGDvariation(t, x[:,[cI]], y[:,[cI]], W, eta, 'cross-entropy','canonical', s,r,gradHist, Whistory, mAdam, vAdam)
-    #             train_network(network_GSGD, x[[curId],:], y[[curId],:], l_rate, n_outputs, lamda, n_inputs)
-    #             NFC = NFC+1
-                
-    #         if t % ropeTeamSz == 0 or t % tmpGuided == 0:  # or et > idx.size:
-    #             idx = np.delete(idx, np.s_[0:tmpGuided], axis=0)
-    #             et = -1
-            
-    #         else:
-    #             # tmpVals = np.setdiff1d(idx[0:tmpGuided], idx[consistentIdx])
-    #             tmpVals = np.setdiff1d(idx[0:tmpGuided], idx[consistentIdx])
-    #             idxArray = np.arange(tmpGuided)
-    #             inconsistentIdx = np.setdiff1d(idxArray, consistentIdx)
-
-    #             # remove consistent idx from list to only have inconsistent idx... 0 is an index** 
-    #             idx = np.delete(idx, inconsistentIdx, axis=0)
-
-    #             idx = np.r_[idx, tmpVals]
-            
-    #         # Plot section
-    #         if t % 10 == 0 or t == T:
-
-    #             plotE = np.append(plotE, ve)
-    #             plotEgens = np.append(plotEgens, t)
-
-    #             doTerminate, SR, E, pocket = validate(
-    #                 xts, network_GSGD, yts, NFC, pocket, n_outputs)
-
-    #             SGDdoTerminate, sgdSR, sgdE = validateSGD(
-    #                 xts, network_SGD, yts, n_outputs)
-
-    #             plotESGD = np.append(plotESGD, eSGD)
-    #             plotEgensSGD = np.append(plotEgensSGD, t)
-    #             plotEoutSRsgd = np.append(plotEoutSRsgd, sgdSR)
-
-    #             SGDEout = np.append(SGDEout, sgdE)
-    #             SGDEin = np.append(SGDEin, eSGD)
-
-    #             if doTerminate:
-    #                 break
-
-    #             plotEin = np.append(plotEin, ve)
-    #             plotEout = np.append(plotEout, E)
-    #             PlotEoutSR = np.append(PlotEoutSR, SR)
-    #             print("Epoch-"+str(ep+1)+" iteration: "+ str(t))
-    #             print("Success rate of SGD: "+ str(sgdSR))
-    #             print("Success rate of GSGD: "+ str(SR)+ "\n")
-    #     SRovertime.append(SR)
-    #     SRSGDOvertime.append(sgdSR)
-    #     GSGDError.append(E)
-    #     SGDError.append(sgdE)
-    #     #best_E= math.inf # draft code
-    # #write plotting code here
-    # if(bPlot):
-
-    #     plt.figure()
-    #     plt.plot(plotEgens, plotE, label='ve', linewidth=1)
-    #     plt.plot(plotEgens, plotEout, 'r--', label='E', linewidth=1)
-    #     plt.plot(plotEgens, PlotEoutSR, 'y-.', label='SR', linewidth=1)
-
-    #     plt.title('Performance of GSGD - %s' % filePath)
-    #     plt.xlabel("Selected Iterations")
-    #     plt.ylabel("Error (E_i_n/E_v)")
-    #     plt.legend(loc=2)
-
-    #     plt.show()
-        
-    # if(bPlot):  #temp
-    #     Epocperm = [ i for i in range(n_epoch+1) if i!=0]
-    #     plt.figure()
-    #     plt.plot(Epocperm, SGDError, label='SGD Error', linewidth=1)
-    #     plt.plot(Epocperm, GSGDError, 'r--', label='GSGD Error', linewidth=1)
-
-    #     plt.title('Error Convergence of GSGD and SGD')
-    #     plt.xlabel("Epochs")
-    #     plt.ylabel("Error")
-    #     plt.legend(loc=2)
-
-    #     plt.show()
-    # SR, NFC = PrintFinalResults_updated([], pocket, xts, yts, True, n_outputs)
-    # #SR, NFC = PrintFinalResults([], pocket, xts, yts, True)
-    # #sgdSR = PrintFinalResultsSGD(network_SGD, xts, yts)
-
-    # print('GSGD: ', SR)
-    # print('SGD: ', sgdSR)
-    # #auditing code
-    # # print("\nSRovertime\n")
-    # # print(SRovertime)
-    # # print("SRSGDOvertime\n")
-    # # print(SRSGDOvertime)
-    
-    # #auditing code
-    # # print("\nError Over Epochs\n")
-    # # print("\nGSGD Error over Epoch\n")
-    # # print(GSGDError)
-    # # print("\nSGD Error over Epoch\n")
-    # # print(SGDError)
-    # return SR, sgdSR
-    
 def initialize_network(n_hidden, n_inputs , n_outputs):
     this_network = list()
     hidden_layer_matrix_1 = np.random.rand(n_inputs + 1, n_hidden)
