@@ -1,3 +1,5 @@
+# Author: Avishek Ram
+# email: avishekram30@gmail.com
 import numpy as np
 import pandas as pd
 import math
@@ -67,3 +69,23 @@ def update_weights(network, row, l_rate, deltas, the_activateds, lamda, d):
         #network[i] = np.subtract(old_weights_matrix, step2)  # new weights nonregularized
         network[i] = np.add(default_weights,((np.float64(lamda)/np.float64(d)) * old_weights_matrix))   #new Weights- Regularized using L2
         
+def initialize_network(n_hidden, n_inputs , n_outputs):
+    this_network = list()
+    hidden_layer_matrix_1 = np.random.rand(n_inputs + 1, n_hidden)
+    this_network.append(hidden_layer_matrix_1)
+    #previuos layer output new layers input
+    rows , columns = hidden_layer_matrix_1.shape
+    # hidden_layer_matrix_2 = np.random.rand(columns + 1, n_hidden)
+    # this_network.append(hidden_layer_matrix_2)
+    output_layer = np.random.rand(n_hidden + 1, n_outputs)
+    this_network.append(output_layer)
+    
+    return this_network
+
+def train_network(network, x, y, l_rate, n_outputs, lamda, n_inputs):
+    for row, row_label in zip(x,y):
+        the_unactivateds, the_activateds = forward_propagate(network, row)
+        expected = [0 for i in range(n_outputs)]
+        expected[row_label[0]] = 1
+        the_deltas = backward_propagate_error(network, np.array(expected), the_activateds)
+        update_weights(network, row, l_rate, the_deltas, the_activateds, lamda, n_inputs) 

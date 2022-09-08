@@ -24,10 +24,8 @@ def GSGD_ANN(filePath):
     
     #model parameters
     l_rate = 0.5
-    n_epoch = 30
     n_hidden = 2
     lamda = 0.000001  #Lambda will be used for regularizaion
-    verfset =  0.01  #percentage of dataset to use for verification; Decrease this value for large datasets
     
     #initialize both networks #should have the same initial weights
     network_GSGD = initialize_network(n_hidden, d , NC)
@@ -35,27 +33,26 @@ def GSGD_ANN(filePath):
 
     # evaluate algorithm GSGD
     is_guided_approach = True
-    rho = 100 #7
-    versetnum = 18#10
-    epochs = 20
-    revisitNum = 15#8
+    rho = 7
+    versetnum = 10
+    epochs = 15
+    revisitNum = 8
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD
-    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset, cache)
+    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache)
 
     # evaluate algorithm SGD
     is_guided_approach = False
-    epochs = 20 #Different Epoch values can be used since GSGD has better convergence
+    epochs = 15 #Different Epoch values can be used since GSGD has better convergence
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD
-    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset, cache)
+    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache)
         
-def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset, cache):   
-    algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset,cache)
+def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache):   
+    algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, filePath, lamda,cache)
     
-def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n_epoch, filePath, lamda, verfset, cache):
-    #new Implementation  #reference CNN-GSGD
+def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, filePath, lamda, cache):
     StopTrainingFlag = False
     is_guided_approach, rho, versetnum, epochs, revisitNum, N, network = cache
-    T = 400
+    T = 500
 
     class PGW:
         weights = list()
@@ -256,41 +253,20 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                 train_network(network, x[[idx],:], y[[idx],:], l_rate, n_outputs, lamda, n_inputs)
                 doTerminate, sgdSR, sgdE, pocketSGD = validate(
                             xts, network, yts, iteration, pocketSGD, n_outputs, epoch+1)
+                
+                if(iteration >= T):
+                    break
 
             # SGDdoTerminate, sgdSR, sgdE = validateSGD(
             #         xts, network, yts, n_outputs)
             
             if(epoch == epochs-1):
                 doTerminate, SR, E, pocketSGD = validate(
-                            xts, pocketSGD.weights, yts, iteration, pocket, n_outputs, epoch+1)
+                            xts, network, yts, iteration, pocket, n_outputs, epoch+1)
         
                 print('Epoch : %s' % str(epoch+1))
                 print('Success Rate: %s' % SR)
                 print('Error Rate: %s' % E)
-
-
-        
-        
-def initialize_network(n_hidden, n_inputs , n_outputs):
-    this_network = list()
-    hidden_layer_matrix_1 = np.random.rand(n_inputs + 1, n_hidden)
-    this_network.append(hidden_layer_matrix_1)
-    #previuos layer output new layers input
-    rows , columns = hidden_layer_matrix_1.shape
-    # hidden_layer_matrix_2 = np.random.rand(columns + 1, n_hidden)
-    # this_network.append(hidden_layer_matrix_2)
-    output_layer = np.random.rand(n_hidden + 1, n_outputs)
-    this_network.append(output_layer)
-    
-    return this_network
-
-def train_network(network, x, y, l_rate, n_outputs, lamda, n_inputs):
-    for row, row_label in zip(x,y):
-        the_unactivateds, the_activateds = forward_propagate(network, row)
-        expected = [0 for i in range(n_outputs)]
-        expected[row_label[0]] = 1
-        the_deltas = backward_propagate_error(network, np.array(expected), the_activateds)
-        update_weights(network, row, l_rate, the_deltas, the_activateds, lamda, n_inputs) 
 
 if __name__ == '__main__':
     root = tk.Tk()
