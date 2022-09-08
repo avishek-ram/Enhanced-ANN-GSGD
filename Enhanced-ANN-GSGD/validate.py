@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 import math
+import copy
 from propagation import forward_propagate
 
-from getError import getError
+from getError import *
 
 
 def validate(inputVal, network, givenOut, nfc, pocket, n_outputs, epoch):
@@ -21,7 +22,7 @@ def validate(inputVal, network, givenOut, nfc, pocket, n_outputs, epoch):
         if len(pocket.weights) == 0:  # try:
             # print('--->')
             # print(nfc)
-            pocket.weights = network
+            pocket.weights = copy.deepcopy(network)
             pocket.sr = SR
             pocket.nfc = nfc
             pocket.s_epoch = epoch
@@ -31,7 +32,7 @@ def validate(inputVal, network, givenOut, nfc, pocket, n_outputs, epoch):
         else:
             if pocket.sr < SR:
                 # print(W)
-                pocket.weights = network
+                pocket.weights = copy.deepcopy(network)
                 pocket.sr = SR
                 pocket.nfc = nfc
                 pocket.s_epoch = epoch

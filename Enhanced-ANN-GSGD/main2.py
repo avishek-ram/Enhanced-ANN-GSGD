@@ -10,7 +10,7 @@ import copy
 from math import exp
 from random import seed
 from propagation import *
-from getError import getError
+from getError import *
 from collectInconsistentInstances import collectInconsistentInstances
 from extractConsistentInstances import extractConsistentInstances
 from validate import *
@@ -26,7 +26,7 @@ def GSGD_ANN(filePath):
     l_rate = 0.5
     n_epoch = 30
     n_hidden = 2
-    lamda = 0.01  #Lambda will be used for regularizaion
+    lamda = 0.000001  #Lambda will be used for regularizaion
     verfset =  0.01  #percentage of dataset to use for verification; Decrease this value for large datasets
     
     #initialize both networks #should have the same initial weights
@@ -35,10 +35,10 @@ def GSGD_ANN(filePath):
 
     # evaluate algorithm GSGD
     is_guided_approach = True
-    rho = 7
-    versetnum = 4
+    rho = 100 #7
+    versetnum = 18#10
     epochs = 20
-    revisitNum = 2
+    revisitNum = 15#8
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, n_epoch, filePath, lamda, verfset, cache)
 
@@ -55,6 +55,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
     #new Implementation  #reference CNN-GSGD
     StopTrainingFlag = False
     is_guided_approach, rho, versetnum, epochs, revisitNum, N, network = cache
+    T = 400
 
     class PGW:
         weights = list()
@@ -90,7 +91,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             #start training iterations
             while  not is_done and (not StopTrainingFlag):  # might have to remove stopTraining flag, matlab code
                 et +=1
-                if et >= (updated_N -1):
+                if et >= (updated_N -1) or et >= T:
                     is_done = True
                 #Set Verification Data at the beginning of epoch
                 if getVerificationData:
@@ -133,7 +134,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                     ver_x = verset_x[[veridxperm], :]
                     ver_y = verset_response[[veridxperm], :]
                     #run foward propagation
-                    verloss = getError(veridxperm, verset_x, verset_response, network, n_outputs)
+                    verloss = getErrorCrossEntropy(veridxperm, verset_x, verset_response, network, n_outputs)
                     #calculate loss of this verification instance  => verloss
                     pos = 1
                     if verloss < prev_error:
@@ -145,7 +146,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                         revisit_dataX = np.array(dataset_X).reshape(len(dataset_X), n_inputs)
                         revisit_dataY = np.array(dataset_y).reshape(len(dataset_y), 1)
 
-                        if loopCount == 1:
+                        if loopCount == 1 or loopCount < revisitNum:
                             loopend = loopCount
                         else:
                             loopend = (revisitNum - 1) #In loops > 2, revisit previous 2 batches
@@ -155,7 +156,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
 
                             #forward propagte revisit_x
                             #Reuse the layers outputs to compute loss of this revisit here => 
-                            lossofrevisit = getError(currentBatchNumber, revisit_dataX, revisit_dataY, network, n_outputs)
+                            lossofrevisit = getErrorCrossEntropy(currentBatchNumber, revisit_dataX, revisit_dataY, network, n_outputs)
                             
                             #previous batch was revisited and loss value is added into the array with previous batch losses
                             #np.append(psi[currentBatchNumber, :], lossofrevisit) old code
@@ -228,13 +229,23 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
                 print('Error Rate: %s' % E)
     
         # compute Finish Summary
-        print('Pocket Success Rate: %s' % pocket.sr)
-        print('success at Epoch: %s' %pocket.s_epoch)
-        print('success at Iteraion: %s' %pocket.s_iteration)
-        print('using pocket weights')
+        doTerminate, SR, E, pocket = validate(
+                            xts, network, yts, iteration, pocket, n_outputs, epoch+1)
+        
+        print('Epoch : %s' % str(epoch+1))
+        print('Success Rate: %s' % SR)
+        print('Error Rate: %s' % E)
+
+        #Final summary
+        print('Success Rate of best weights: %s' % pocket.sr)
+        print('using pocket weights ...')
         doTerminate, SR, E, pocket = validate(
                             xts, pocket.weights, yts, iteration, pocket, n_outputs, epoch+1)
-        print('SSRRR: %s' % SR)
+        
+        print('Epoch : %s' % str(epoch+1))
+        print('Success Rate: %s' % SR)
+        print('Error Rate: %s' % E)
+
     else: #not guided training
         print("Not Guided Training started")
         for epoch in range(epochs):
@@ -250,12 +261,12 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, n
             #         xts, network, yts, n_outputs)
             
             if(epoch == epochs-1):
-                print("SGD Success Rates: .....")
-                # print('Success Rate: %s' % sgdSR)
-                # print('Error Rate: %s' % sgdE)
-                print('Pocket Success Rate: %s' % pocketSGD.sr)
-                print('success at Epoch: %s' %pocketSGD.s_epoch)
-                print('success at Iteraion: %s' %pocketSGD.s_iteration)
+                doTerminate, SR, E, pocketSGD = validate(
+                            xts, pocketSGD.weights, yts, iteration, pocket, n_outputs, epoch+1)
+        
+                print('Epoch : %s' % str(epoch+1))
+                print('Success Rate: %s' % SR)
+                print('Error Rate: %s' % E)
 
 
         
