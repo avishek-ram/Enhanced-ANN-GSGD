@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-import math
+import torch
+import torchmetrics
 import copy
 from getError import *
 
@@ -11,10 +12,12 @@ def validate(inputVal, network, givenOut, nfc, pocket, n_outputs, epoch, loss_fu
     
     #get predicted value
     predicted = get_predictions(network, xval)
-    actual = torch.from_numpy(givenOut).float()
-    totCorrect = accuracy_metric(actual, predicted)
+    actual = torch.from_numpy(givenOut)#.float()
     
-    SR = totCorrect/len(xval[:,1])
+    # totCorrect = accuracy_metric(actual, predicted)
+    
+    # SR = totCorrect/len(xval[:,1])
+    SR = torchmetrics.functional.accuracy(predicted, actual)
     loss = loss_function(predicted, actual)
     E = loss.item()
 

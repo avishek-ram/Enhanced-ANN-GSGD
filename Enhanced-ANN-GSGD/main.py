@@ -29,9 +29,9 @@ def GSGD_ANN(filePath):
     seed(1)
     
     #model parameters
-    l_rate = 0.5
+    l_rate = 0.5 #0.01
     n_hidden = 2
-    lamda = 0.001  #Lambda will be used for L2 regularizaion
+    lamda = 0.0001  #Lambda will be used for L2 regularizaion
         
     #initialize both networks #should have the same initial weights
     network_GSGD = nn.Sequential(nn.Linear(d, n_hidden),
@@ -237,7 +237,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
                             xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
 
                 print('Epoch : %s' % str(epoch+1))
-                print('Success Rate: %s' % SR)
+                print('Success Rate: %s' % SR.item())
                 print('Error Rate: %s' % E)
     
         # compute Finish Summary
@@ -245,18 +245,20 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
                             xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
         
         print('Epoch : %s' % str(epoch+1))
-        print('Success Rate: %s' % SR)
+        print('Success Rate: %s' % SR.item())
         print('Error Rate: %s' % E)
 
         #Final summary
-        print('Success Rate of best weights: %s' % pocket.sr)
+        print('Success Rate of best weights: %s' % pocket.sr.item())
         print('using pocket weights ...')
-        doTerminate, SR, E, pocket = validate(
-                            xts, pocket.weights, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
+        # doTerminate, SR, E, pocket = validate(
+        #                     xts, pocket.weights, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
         
-        print('Epoch : %s' % str(epoch+1))
-        print('Success Rate: %s' % SR)
-        print('Error Rate: %s' % E)
+        # print('Epoch : %s' % str(epoch+1))
+        # print('Success Rate: %s' % SR)
+        # print('Error Rate: %s' % E)
+
+        print_results_final(xts, pocket.weights, yts, loss_function, type='GSGD')
 
     else: #not guided training
         print("Not Guided Training started")
@@ -284,7 +286,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
                             xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
     
                 print('Epoch : %s' % str(epoch+1))
-                print('Success Rate: %s' % SR)
+                print('Success Rate: %s' % SR.item())
                 print('Error Rate: %s' % E)
 
 if __name__ == '__main__':

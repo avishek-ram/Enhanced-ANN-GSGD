@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from validate import *
+import matplotlib.pyplot as plt
 
 
 def PrintFinalResults(gr, PocketGoodWeights, inputVal, givenOut, printData):
@@ -113,4 +114,35 @@ def PrintFinalResults_updated(gr, PocketGoodWeights, inputVal, givenOut, printDa
 
         return SR, nfc
             
+def print_results_final(inputVal, network, givenOut, loss_function, type = '' , pocket = None):
+    xval = inputVal
+    
+    #get predicted value
+    predicted = get_predictions(network, xval)
+    actual = torch.from_numpy(givenOut)#.float()
+    
+    accuracy = torchmetrics.functional.accuracy(predicted, actual)
+    loss = loss_function(predicted, actual)
+    overall_E = loss.item()
+    recall = torchmetrics.functional.recall(preds=predicted, target=actual)
+    precision = torchmetrics.functional.precision(preds=predicted, target=actual)
+    specifity = torchmetrics.functional.specificity(preds=predicted, target=actual)
+    f1score = torchmetrics.functional.f1_score(preds=predicted, target=actual)
+    fpr, tpr, thresholds =  torchmetrics.functional.roc(preds=predicted, target=actual)
 
+    print('--Results------'+ type)
+    print('Classification Accuracy: ', accuracy.item())
+    print('Recall: ', recall.item())
+    print('Precision: ', precision.item())
+    print('Specificity: ', specifity.item())
+    print('F1-score: ', f1score.item())
+    print('----------------\n\n')
+
+    plt.figure()
+    plt.plot(fpr, tpr,'b--', label='ROC', linewidth=1)
+    plt.title('ROC Curve')
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.savefig('graphs/'+ type +'/test.png')
+
+    
