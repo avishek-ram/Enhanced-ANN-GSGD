@@ -15,6 +15,8 @@ from collectInconsistentInstances import collectInconsistentInstances
 from extractConsistentInstances import extractConsistentInstances
 from validate import *
 from printFinalResults import *
+import torch
+import torch.nn as nn
 
 def GSGD_ANN(filePath):
     # reading data, normalize and spliting into train/test
@@ -25,33 +27,40 @@ def GSGD_ANN(filePath):
     #model parameters
     l_rate = 0.5
     n_hidden = 2
-    lamda = 0.000001  #Lambda will be used for regularizaion
-    
+    lamda = 0.001  #Lambda will be used for regularizaion
+        
     #initialize both networks #should have the same initial weights
-    network_GSGD = initialize_network(n_hidden, d , NC)
+    network_GSGD = nn.Sequential(nn.Linear(d, n_hidden),
+                      nn.ReLU(),
+                      nn.Linear(n_hidden, 1),
+                      nn.Sigmoid())
+    optimizer_GSGD = torch.optim.SGD(network_GSGD.parameters(), lr=l_rate, weight_decay= lamda)
     network_SGD = copy.deepcopy(network_GSGD)
+    optimizer_SGD = torch.optim.SGD(network_SGD.parameters(), lr=l_rate, weight_decay= lamda)
+
 
     # evaluate algorithm GSGD
     is_guided_approach = True
     rho = 7
-    versetnum = 10
+    versetnum = 5
     epochs = 15
-    revisitNum = 8
-    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD
+    revisitNum = 3
+    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache)
 
     # evaluate algorithm SGD
     is_guided_approach = False
     epochs = 15 #Different Epoch values can be used since GSGD has better convergence
-    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD
+    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD, optimizer_SGD
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache)
         
 def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache):   
     algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, filePath, lamda,cache)
     
 def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, filePath, lamda, cache):
+    loss_function = nn.MSELoss()
     StopTrainingFlag = False
-    is_guided_approach, rho, versetnum, epochs, revisitNum, N, network = cache
+    is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer = cache
     T = 500
 
     class PGW:
@@ -62,7 +71,6 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
         s_iteration = 0
     
     pocket = PGW()
-    pocketSGD = PGW()
     
     #start epoch
     if is_guided_approach:
@@ -86,7 +94,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
             iteration = 0
             is_done = False
             #start training iterations
-            while  not is_done and (not StopTrainingFlag):  # might have to remove stopTraining flag, matlab code
+            while  not is_done and (not StopTrainingFlag):
                 et +=1
                 if et >= (updated_N -1) or et >= T:
                     is_done = True
@@ -98,8 +106,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
                         indxToRemove.append(indx)
                         x_inst = new_X[[indx], :]
                         y_inst = new_y[[indx], :]
-                        verset_x.append(x_inst)#np.append(verset_x, x_inst, axis=0)
-                        verset_response.append(y_inst)#np.append(verset_response, y_inst, axis=0)
+                        verset_x.append(x_inst)
+                        verset_response.append(y_inst)
                     updated_N = N - versetnum
                     verset_x  = np.array(verset_x).reshape(versetnum, n_inputs)
                     verset_response = np.array(verset_response).reshape(versetnum, 1)
@@ -117,7 +125,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
                     dataset_y.append(y_inst)
 
                     #1  train Network
-                    train_network(network, x_inst, y_inst, l_rate, n_outputs, lamda, n_inputs)
+                    train_network(network, x_inst, y_inst, l_rate, n_outputs, lamda, n_inputs, loss_function, optimizer)
                     #2 get loss
                     
                     #3 get gradients, regularize if needed
@@ -131,7 +139,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
                     ver_x = verset_x[[veridxperm], :]
                     ver_y = verset_response[[veridxperm], :]
                     #run foward propagation
-                    verloss = getErrorCrossEntropy(veridxperm, verset_x, verset_response, network, n_outputs)
+                    # verloss = getErrorCrossEntropy(veridxperm, verset_x, verset_response, network, n_outputs)
+                    verloss = getErrorMSE(veridxperm, verset_x, verset_response, network, loss_function)
                     #calculate loss of this verification instance  => verloss
                     pos = 1
                     if verloss < prev_error:
@@ -153,7 +162,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
 
                             #forward propagte revisit_x
                             #Reuse the layers outputs to compute loss of this revisit here => 
-                            lossofrevisit = getErrorCrossEntropy(currentBatchNumber, revisit_dataX, revisit_dataY, network, n_outputs)
+                            #lossofrevisit = getErrorCrossEntropy(currentBatchNumber, revisit_dataX, revisit_dataY, network, n_outputs)
+                            lossofrevisit = getErrorMSE(currentBatchNumber, revisit_dataX, revisit_dataY, network, loss_function)
                             
                             #previous batch was revisited and loss value is added into the array with previous batch losses
                             #np.append(psi[currentBatchNumber, :], lossofrevisit) old code
@@ -195,14 +205,15 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
                             #gradients rgularized
                             # update weights
                             #update sunmmary
-                            train_network(network, x_inst, y_inst, l_rate, n_outputs, lamda, n_inputs)
+                            train_network(network, x_inst, y_inst, l_rate, n_outputs, lamda, n_inputs, loss_function, optimizer)
 
                             #Get Verification Data Loss
                             verIDX = np.random.permutation(versetnum)[0]
                             verx = verset_x[[verIDX], :]
                             very = verset_response[[verIDX], :]
                             # forward propagate 
-                            verLoss  = getError(verIDX, verset_x, verset_response, network, n_outputs)
+                            # verLoss  = getError(verIDX, verset_x, verset_response, network, n_outputs)
+                            verLoss  = getErrorMSE(verIDX, verset_x, verset_response, network, loss_function)
                             prev_error = verLoss
                     
                     avgBatchLosses = []
@@ -219,7 +230,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
                     break
         
                 doTerminate, SR, E, pocket = validate(
-                            xts, network, yts, iteration, pocket, n_outputs, epoch+1)
+                            xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
 
                 print('Epoch : %s' % str(epoch+1))
                 print('Success Rate: %s' % SR)
@@ -227,7 +238,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
     
         # compute Finish Summary
         doTerminate, SR, E, pocket = validate(
-                            xts, network, yts, iteration, pocket, n_outputs, epoch+1)
+                            xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
         
         print('Epoch : %s' % str(epoch+1))
         print('Success Rate: %s' % SR)
@@ -237,7 +248,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
         print('Success Rate of best weights: %s' % pocket.sr)
         print('using pocket weights ...')
         doTerminate, SR, E, pocket = validate(
-                            xts, pocket.weights, yts, iteration, pocket, n_outputs, epoch+1)
+                            xts, pocket.weights, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
         
         print('Epoch : %s' % str(epoch+1))
         print('Success Rate: %s' % SR)
@@ -250,10 +261,14 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
             iteration = 0
             for idx in shuffled_idxs:
                 iteration += 1
-                train_network(network, x[[idx],:], y[[idx],:], l_rate, n_outputs, lamda, n_inputs)
-                doTerminate, sgdSR, sgdE, pocketSGD = validate(
-                            xts, network, yts, iteration, pocketSGD, n_outputs, epoch+1)
-                
+                network.zero_grad()
+                data_x = torch.from_numpy(x[[idx],:]).float()
+                pred_y = network(data_x)
+                data_y = torch.from_numpy(y[[idx],:]).float() #row_label should numpy array
+                loss = loss_function(pred_y, data_y)
+                loss.backward()
+
+                optimizer.step()
                 if(iteration >= T):
                     break
 
@@ -262,8 +277,8 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
             
             if(epoch == epochs-1):
                 doTerminate, SR, E, pocketSGD = validate(
-                            xts, network, yts, iteration, pocket, n_outputs, epoch+1)
-        
+                            xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
+    
                 print('Epoch : %s' % str(epoch+1))
                 print('Success Rate: %s' % SR)
                 print('Error Rate: %s' % E)

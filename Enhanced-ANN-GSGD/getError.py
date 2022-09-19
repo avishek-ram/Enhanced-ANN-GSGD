@@ -6,6 +6,8 @@ from math import exp
 from propagation import forward_propagate, backward_propagate_error
 from sklearn.metrics import log_loss
 from sklearn.neural_network import MLPClassifier
+import torch
+import torch.nn as nn
 
 def custom_train(network, xinst, yinst, n_outputs):
     the_unactivateds, the_activateds = forward_propagate(network, xinst)
@@ -32,3 +34,14 @@ def getErrorCrossEntropy(idx, x, y, network, n_outputs):
     y_true = expected
     error = log_loss(y_true, y_pred)
     return error
+
+
+def getErrorMSE(idx, x, y, network, loss_function):
+    row = x[idx]
+    row_label = y[idx]
+    network.zero_grad()
+    data_x = torch.from_numpy(row).float()
+    pred_y = network(data_x)
+    data_y = torch.from_numpy(row_label).float() #row_label should numpy array
+    loss = loss_function(pred_y, data_y)
+    return loss.item()

@@ -7,16 +7,18 @@ from propagation import forward_propagate
 from getError import *
 
 
-def validate(inputVal, network, givenOut, nfc, pocket, n_outputs, epoch):
+def validate(inputVal, network, givenOut, nfc, pocket, n_outputs, epoch, loss_function):
     xval = inputVal
     doTerminate = False
     
     #get predicted value
     predicted = get_predictions(network, xval)
-    actual = givenOut
+    actual = torch.from_numpy(givenOut).float()
     totCorrect = accuracy_metric(actual, predicted)
     
-    SR = totCorrect/len(xval[:,1])  
+    SR = totCorrect/len(xval[:,1])
+    loss = loss_function(predicted, actual)
+    E = loss.item()
 
     if SR > 0.5:
         if len(pocket.weights) == 0:  # try:
@@ -45,12 +47,12 @@ def validate(inputVal, network, givenOut, nfc, pocket, n_outputs, epoch):
             False
 
     N = np.size(inputVal, axis=0)  # number of cols    
-    E = 0
-    for IN in range(N):
-        nErr = getError(IN, inputVal, givenOut, network, n_outputs)
-        E = E + nErr
+    # E = 0
+    # for IN in range(N):
+    #     nErr = getError(IN, inputVal, givenOut, network, n_outputs)
+    #     E = E + nErr
 
-    E = E/N
+    # E = E/N
 
     return doTerminate, SR, E, pocket  # PocketGoodWeights, doTerminate, SR, E, pocket
 
@@ -86,14 +88,23 @@ def predict(network, row):
 def accuracy_metric(actual, predicted):
 	correct = 0
 	for i in range(len(actual)):
-		if actual[i][0] == predicted[i][0]:
+		if actual[i][0] == torch.round(predicted[i][0]).float():
 			correct += 1
 	return correct  
 
 
 def get_predictions(network, xts):
-    predictions_test = list()
-    for row in xts:
-        prediction = predict(network, row)
-        predictions_test.append([prediction])
-    return (predictions_test)
+    network.zero_grad()
+    data_x = torch.from_numpy(xts).float()
+    pred_y = network(data_x)
+    #network.zero_grad()
+
+    return pred_y
+    # predictions_test = list()
+    # for row in xts:
+    #     # prediction = predict(network, row)
+    #     # predictions_test.append([prediction])
+    #     data_x = torch.from_numpy(row).float()
+    #     pred_y = network(data_x)
+    #     predictions_test.append(pred_y)
+    # return (predictions_test)
