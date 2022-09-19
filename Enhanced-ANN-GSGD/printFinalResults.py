@@ -30,23 +30,6 @@ def PrintFinalResults(gr, PocketGoodWeights, inputVal, givenOut, printData):
 
     return SR, nfc
 
-
-def PrintFinalResultsSGD(network_SGD, inputVal, givenOut):
-
-    xval = inputVal
-
-    #get predicted value
-    predicted = get_predictions(network_SGD, xval)
-    actual = givenOut
-    totCorrect = accuracy_metric(actual, predicted)
-        
-    # SR code can be reused
-    
-    SR = totCorrect/len(xval[:,1]) * 100 
-    print("Success rate: ", "{:.7f}".format(SR))
-
-    return SR
-
 def PrintFinalResults_updated(gr, PocketGoodWeights, inputVal, givenOut, printData, n_outputs):
         
     nfc = 0
