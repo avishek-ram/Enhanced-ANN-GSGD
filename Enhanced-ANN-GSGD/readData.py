@@ -21,20 +21,10 @@ def readData(file_path):
     apply_smote_oversampling = True
     
     if apply_smote_oversampling:
-        #avishek- start oversampling minority class in training data only
-        
-        #print currnt classification class distribution
-        #counter = Counter(tuple(te) for te in Y_train_old.values)
-        #print(counter)
-        
+        #avishek- start oversampling minority class in training data only    
         oversample = SMOTE(random_state=20)
     
         x, y = oversample.fit_resample(X_train_old,Y_train_old)
-        
-        #print classification class distribution
-        # counter = Counter(tuple(te) for te in y.values)
-        # print(counter)
-        #end
     else:
         x = X_train_old
         y = Y_train_old

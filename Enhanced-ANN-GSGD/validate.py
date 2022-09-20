@@ -21,33 +21,25 @@ def validate(inputVal, network, givenOut, nfc, pocket, n_outputs, epoch, loss_fu
     loss = loss_function(predicted, actual)
     E = loss.item()
 
-    if SR > 0.5:
-        if len(pocket.weights) == 0:  # try:
-            # print('--->')
-            # print(nfc)
+    if len(pocket.weights) == 0:  # try:
+        # print('--->')
+        # print(nfc)
+        pocket.weights = copy.deepcopy(network)
+        pocket.sr = SR
+        pocket.nfc = nfc
+        pocket.s_epoch = epoch
+        pocket.s_iteration = nfc
+
+    # except IndexError:
+    else:
+        if pocket.sr < SR:
+            # print(W)
             pocket.weights = copy.deepcopy(network)
             pocket.sr = SR
             pocket.nfc = nfc
             pocket.s_epoch = epoch
             pocket.s_iteration = nfc
-
-        # except IndexError:
-        else:
-            if pocket.sr < SR:
-                # print(W)
-                pocket.weights = copy.deepcopy(network)
-                pocket.sr = SR
-                pocket.nfc = nfc
-                pocket.s_epoch = epoch
-                pocket.s_iteration = nfc
-
-        # print(SR)
-        if SR > 110.85:  # percentage defined after decimal. <85% would be 0.85>
-            doTerminate = True
-        else:
-            False
-
-    N = np.size(inputVal, axis=0)  # number of cols    
+   
     return doTerminate, SR, E, pocket  # PocketGoodWeights, doTerminate, SR, E, pocket
 
 # Calculate accuracy percentage
