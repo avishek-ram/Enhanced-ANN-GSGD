@@ -23,16 +23,27 @@ def GSGD_ANN(filePath):
     NC, x, y, N, d, xts, yts = readData(filePath)
 
     if(NC > 2):
-        print("Multi class classification is currently not supported in this version")
+        print("Multi class classification is not supported in this version")
         return
 
     seed(1)
     
     #model parameters
-    l_rate = 0.5 #0.01
+    l_rate = 0.00025 #0.5
     n_hidden = 2
     lamda = 0.0001  #Lambda will be used for L2 regularizaion
-        
+    
+    #Results Container
+    GSGD_SRoverEpochs = []
+    GSGD_SRpocketoverEpochs = []
+    GSGD_EoverEpochs = []
+    GSGD_EpocketoverEpochs = []
+
+    SGD_SRoverEpochs = []
+    SGD_EoverEpochs = []
+
+    results_container = GSGD_SRoverEpochs, GSGD_SRpocketoverEpochs, GSGD_EoverEpochs, GSGD_EpocketoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs
+
     #initialize both networks #should have the same initial weights
     network_GSGD = nn.Sequential(nn.Linear(d, n_hidden),
                       nn.ReLU(),
@@ -47,25 +58,28 @@ def GSGD_ANN(filePath):
     is_guided_approach = True
     rho = 7
     versetnum = 5
-    epochs = 15
+    epochs = 18
     revisitNum = 3
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD
-    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache)
+    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache, results_container)
 
     # evaluate algorithm SGD
     is_guided_approach = False
-    epochs = 15 #Different Epoch values can be used since GSGD has better convergence
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD, optimizer_SGD
-    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache)
+    evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache, results_container)
+
+    #collction of final results and graphs
+    generate_graphs(epochs, results_container)
         
-def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache):
-    algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, filePath, lamda,cache)
+def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache , results_container):
+
+    algorithm(x, y, xts, yts, l_rate, n_hidden, d, NC, N, filePath, lamda, cache, results_container)
     
-def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, filePath, lamda, cache):
+def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, filePath, lamda, cache, results_container):
     loss_function = nn.MSELoss()
     StopTrainingFlag = False
     is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer = cache
-    T = 500
+    T = 600
 
     class PGW:
         weights = list()
@@ -75,11 +89,16 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
         s_iteration = 0
     
     pocket = PGW()
-    
+
+    GSGD_SRoverEpochs, GSGD_SRpocketoverEpochs, GSGD_EoverEpochs, GSGD_EpocketoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs = results_container
+
     #start epoch
     if is_guided_approach:
         prev_error = math.inf #set initial error to very large number
         for epoch in range(epochs):
+            epochPocket = copy.deepcopy(network)
+            epoch_sr =  0.0
+            epoch_E = math.inf
             getVerificationData = True
             verset_x = []
             verset_response = []
@@ -236,20 +255,31 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
                 doTerminate, SR, E, pocket = validate(
                             xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
 
+                if(SR.item() > epoch_sr):
+                    epoch_sr = SR.item()
+                    epochPocket = copy.deepcopy(network)
+                    epoch_E = E
                 print('Epoch : %s' % str(epoch+1))
                 print('Success Rate: %s' % SR.item())
                 print('Error Rate: %s' % E)
+
+            #Epoch Completes here
+            GSGD_SRpocketoverEpochs.append(epoch_sr)
+            GSGD_SRoverEpochs.append(SR.item())
+            GSGD_EoverEpochs.append(E)
+            GSGD_EpocketoverEpochs.append(epoch_E)
+
     
         # compute Finish Summary
-        doTerminate, SR, E, pocket = validate(
-                            xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
+        # doTerminate, SR, E, pocket = validate(
+        #                     xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
         
-        print('Epoch : %s' % str(epoch+1))
-        print('Success Rate: %s' % SR.item())
-        print('Error Rate: %s' % E)
+        # print('Epoch : %s' % str(epoch+1))
+        # print('Success Rate: %s' % SR.item())
+        # print('Error Rate: %s' % E)
 
         #Final summary
-        print('Success Rate of best weights: %s' % pocket.sr.item())
+        # print('Success Rate of best weights: %s' % pocket.sr.item())
         print('using pocket weights ...')
         # doTerminate, SR, E, pocket = validate(
         #                     xts, pocket.weights, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
@@ -281,13 +311,17 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
             # SGDdoTerminate, sgdSR, sgdE = validateSGD(
             #         xts, network, yts, n_outputs)
             
-            if(epoch == epochs-1):
-                doTerminate, SR, E, pocketSGD = validate(
+            doTerminate, SR, E, pocketSGD = validate(
                             xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
-    
+
+            SGD_SRoverEpochs.append(SR.item())
+            SGD_EoverEpochs.append(E)
+
+            if(epoch == epochs-1):    
                 print('Epoch : %s' % str(epoch+1))
                 print('Success Rate: %s' % SR.item())
                 print('Error Rate: %s' % E)
+                print_results_final(xts, network, yts, loss_function, type='SGD')
 
 if __name__ == '__main__':
     root = tk.Tk()
