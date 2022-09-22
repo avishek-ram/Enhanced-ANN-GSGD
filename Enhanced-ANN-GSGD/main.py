@@ -62,7 +62,7 @@ def GSGD_ANN(filePath):
     is_guided_approach = True
     rho = 7
     versetnum = 5
-    epochs = 18
+    epochs = 30
     revisitNum = 3
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache, results_container)
@@ -261,7 +261,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
 
         print('using pocket weights ...')
 
-        print_results_final(xts, pocket.weights, yts, loss_function, type='GSGD')
+        print_results_final(xts, pocket.weights, yts, loss_function, type='guided')
 
     else: #not guided training
         print("Not Guided Training started")
@@ -291,7 +291,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
                 print('Epoch : %s' % str(epoch+1))
                 print('Success Rate: %s' % SR.item())
                 print('Error Rate: %s' % E)
-                print_results_final(xts, network, yts, loss_function, type='SGD')
+                print_results_final(xts, network, yts, loss_function, type='original')
 
 if __name__ == '__main__':
     root = tk.Tk()

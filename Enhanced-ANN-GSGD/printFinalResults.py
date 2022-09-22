@@ -20,7 +20,7 @@ def print_results_final(inputVal, network, givenOut, loss_function, type = '' , 
 
     print('--Results------'+ type)
     print('Classification Accuracy: ', accuracy.item())
-    print
+    print('overall Error', overall_E)
     print('Recall: ', recall.item())
     print('Precision: ', precision.item())
     print('Specificity: ', specifity.item())
