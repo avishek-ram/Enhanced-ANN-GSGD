@@ -19,7 +19,7 @@ def train_network(network, x, y, l_rate, n_outputs, lamda, n_inputs, loss_functi
 def get_optimizer(network, name, cache):
     l_rate, lamda, betas, beta, epsilon = cache 
     if(name == 'SGD'):
-        return torch.optim.SGD(network.parameters(), lr=l_rate, weight_decay= lamda)
+        return torch.optim.SGD(network.parameters(), lr=l_rate, weight_decay= lamda, momentum=0.9, dampening=0.3)
     elif(name == 'ADAM'):
         return torch.optim.Adam(network.parameters(), lr=l_rate, betas= betas,  weight_decay= lamda)
     elif(name == 'ADADELTA'):

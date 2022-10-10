@@ -6,7 +6,7 @@ import copy
 from getError import *
 
 
-def validate(inputVal, network, givenOut, nfc, pocket, n_outputs, epoch, loss_function):
+def validate(inputVal, network, givenOut, nfc, n_outputs, epoch, loss_function):
     xval = inputVal
     doTerminate = False
     
@@ -19,28 +19,8 @@ def validate(inputVal, network, givenOut, nfc, pocket, n_outputs, epoch, loss_fu
     # SR = totCorrect/len(xval[:,1])
     SR = torchmetrics.functional.accuracy(predicted, actual)
     loss = loss_function(predicted, actual)
-    E = loss.item()
-
-    if len(pocket.weights) == 0:  # try:
-        # print('--->')
-        # print(nfc)
-        pocket.weights = copy.deepcopy(network)
-        pocket.sr = SR
-        pocket.nfc = nfc
-        pocket.s_epoch = epoch
-        pocket.s_iteration = nfc
-
-    # except IndexError:
-    else:
-        if pocket.sr < SR:
-            # print(W)
-            pocket.weights = copy.deepcopy(network)
-            pocket.sr = SR
-            pocket.nfc = nfc
-            pocket.s_epoch = epoch
-            pocket.s_iteration = nfc
-   
-    return doTerminate, SR, E, pocket  # PocketGoodWeights, doTerminate, SR, E, pocket
+    E = loss.item()   
+    return doTerminate, SR, E  # PocketGoodWeights, doTerminate, SR, E
 
 # Calculate accuracy percentage
 def accuracy_metric(actual, predicted):

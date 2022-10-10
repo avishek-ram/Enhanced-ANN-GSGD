@@ -17,6 +17,7 @@ from validate import *
 from printFinalResults import *
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
 
 def GSGD_ANN(filePath):
     # reading data, normalize and spliting into train/test
@@ -25,9 +26,9 @@ def GSGD_ANN(filePath):
     seed(1)
     
     #model parameters
-    l_rate = 0.00025 #0.5
-    n_hidden = 2
-    lamda = 0.0001  #Lambda will be used for L2 regularizaion
+    l_rate = 0.0002314354244#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
+    n_hidden = 36 #4
+    lamda =  1e-06#0.0001  #Lambda will be used for L2 regularizaion
     betas = (0.9, 0.999)
     beta = 0.9
     epsilon = 1e-8
@@ -39,18 +40,20 @@ def GSGD_ANN(filePath):
 
     #Results Container
     GSGD_SRoverEpochs = []
-    GSGD_SRpocketoverEpochs = []
     GSGD_EoverEpochs = []
-    GSGD_EpocketoverEpochs = []
 
     SGD_SRoverEpochs = []
     SGD_EoverEpochs = []
 
-    results_container = GSGD_SRoverEpochs, GSGD_SRpocketoverEpochs, GSGD_EoverEpochs, GSGD_EpocketoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs
+    singlepochSRGSGD = []
+    singlepochSRSGD = []
+
+    results_container = GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs, singlepochSRGSGD, singlepochSRSGD
 
     #initialize both networks #should have the same initial weights
-    network_GSGD = nn.Sequential(nn.Linear(d, n_hidden),
-                      nn.ReLU(),
+    network_GSGD = nn.Sequential(
+                      nn.Linear(d, n_hidden),
+                      nn.Sigmoid(),
                       nn.Linear(n_hidden, 1),
                       nn.Sigmoid())
     optimizer_GSGD = get_optimizer(network_GSGD, name=optim_name, cache= optim_params)
@@ -59,21 +62,22 @@ def GSGD_ANN(filePath):
 
 
     # evaluate algorithm GSGD
+    T = 1000
     is_guided_approach = True
     rho = 7
     versetnum = 5
     epochs = 30
     revisitNum = 3
-    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD
+    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD, T
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache, results_container)
 
     # evaluate algorithm SGD
     is_guided_approach = False
-    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD, optimizer_SGD
+    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD, optimizer_SGD, T
     evaluate_algorithm(back_propagation, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache, results_container)
 
     #collction of final results and graphs
-    generate_graphs(epochs, results_container)
+    generate_graphs(epochs, results_container, T)
         
 def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache , results_container):
 
@@ -82,25 +86,14 @@ def evaluate_algorithm(algorithm, x, y, xts, yts , l_rate, n_hidden, d, NC, N, f
 def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, filePath, lamda, cache, results_container):
     loss_function = nn.MSELoss()
     StopTrainingFlag = False
-    is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer = cache
-    T = 600
-
-    class PGW:
-        weights = list()
-        nfc = 00
-        sr = 0
-        s_epoch = 0
-        s_iteration = 0
+    is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer, T = cache
     
-    pocket = PGW()
-
-    GSGD_SRoverEpochs, GSGD_SRpocketoverEpochs, GSGD_EoverEpochs, GSGD_EpocketoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs = results_container
+    GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs, singlepochSRGSGD, singlepochSRSGD  = results_container
 
     #start epoch
     if is_guided_approach:
         prev_error = math.inf #set initial error to very large number
         for epoch in range(epochs):
-            epochPocket = copy.deepcopy(network)
             epoch_sr =  0.0
             epoch_E = math.inf
             getVerificationData = True
@@ -239,50 +232,71 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
                     is_guided = False
 
                     #If an interrupt request has been made, break out of the epoch loop
-                if StopTrainingFlag: 
+                if StopTrainingFlag or is_done: 
                     break
         
-                doTerminate, SR, E, pocket = validate(
-                            xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
+                doTerminate, SR, E = validate(
+                            xts, network, yts, iteration, n_outputs, epoch+1, loss_function)
 
                 if(SR.item() > epoch_sr):
                     epoch_sr = SR.item()
-                    epochPocket = copy.deepcopy(network)
                     epoch_E = E
                 print('Epoch : %s' % str(epoch+1))
                 print('Success Rate: %s' % SR.item())
                 print('Error Rate: %s' % E)
+                if epoch == 0:
+                    singlepochSRGSGD.append(SR.item())
+
 
             #Epoch Completes here
-            GSGD_SRpocketoverEpochs.append(epoch_sr)
             GSGD_SRoverEpochs.append(SR.item())
             GSGD_EoverEpochs.append(E)
-            GSGD_EpocketoverEpochs.append(epoch_E)
 
-        print('using pocket weights ...')
+        print_results_final(xts, network, yts, loss_function, type='guided')
 
-        print_results_final(xts, pocket.weights, yts, loss_function, type='guided')
-
-    else: #not guided training
+    else: #not guided training in mini batches
         print("Not Guided Training started")
-        for epoch in range(epochs):
-            shuffled_idxs = np.random.permutation(N-1)
-            iteration = 0
-            for idx in shuffled_idxs:
-                iteration += 1
-                network.zero_grad()
-                data_x = torch.from_numpy(x[[idx],:]).float()
-                pred_y = network(data_x)
-                data_y = torch.from_numpy(y[[idx],:]).float() #row_label should numpy array
-                loss = loss_function(pred_y, data_y)
-                loss.backward()
+        shuffled_idxs = np.random.permutation(N-1)
 
-                optimizer.step()
-                if(iteration >= T):
-                    break
+        tensor_x = torch.Tensor(x[shuffled_idxs])
+        tensor_y = torch.Tensor(y[shuffled_idxs])
+
+        my_dataset = TensorDataset(tensor_x, tensor_y)
+        training_loader = DataLoader(my_dataset, batch_size=7, shuffle=True)
+
+        for epoch in range(epochs):
             
-            doTerminate, SR, E, pocketSGD = validate(
-                            xts, network, yts, iteration, pocket, n_outputs, epoch+1, loss_function)
+            for input,labels in training_loader:
+                network.zero_grad()
+                pred_y = network(input)
+                loss = loss_function(pred_y, labels)
+                loss.backward()
+                optimizer.step()
+
+
+            # iteration = 0
+            # for idx in shuffled_idxs:
+            #     iteration += 1
+            #     network.zero_grad()
+            #     data_x = torch.from_numpy(x[[idx],:]).float()
+            #     pred_y = network(data_x)
+            #     data_y = torch.from_numpy(y[[idx],:]).float() #row_label should numpy array
+            #     loss = loss_function(pred_y, data_y)
+            #     loss.backward()
+
+            #     optimizer.step()
+                                
+            #     if(epoch == 0):
+            #         doTerminate, SR, E = validate(
+            #                 xts, network, yts, iteration, n_outputs, epoch+1, loss_function)
+            #         singlepochSRSGD.append(SR.item())
+
+            #     if(iteration >= T):
+            #         break
+            
+            iteration = 0
+            doTerminate, SR, E = validate(
+                            xts, network, yts, iteration, n_outputs, epoch+1, loss_function)
 
             SGD_SRoverEpochs.append(SR.item())
             SGD_EoverEpochs.append(E)
