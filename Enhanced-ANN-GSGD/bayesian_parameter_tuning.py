@@ -1,23 +1,18 @@
 #Reference - https://towardsdatascience.com/quick-tutorial-using-bayesian-optimization-to-tune-your-hyperparameters-in-pytorch-e9f74fc133c2
 
-from operator import ne
-from typing_extensions import Self
 import torch
 import numpy as np
-import torchvision
 from torch.utils.data import DataLoader, TensorDataset
 from ax.service.managed_loop import optimize
-from ax.utils.tutorials.cnn_utils import  train, evaluate
+from ax.utils.tutorials.cnn_utils import  train, evaluate # evaluate can also be used ANN
 
 from readData import readData
-import tkinter as tk
-from tkinter import filedialog
-import os
 import torch
 import torch.nn as nn
-from network import *
+
 
 torch.manual_seed(12345)
+
 #torch.cuda.set_device(0) #this is sometimes necessary for me
 dtype = torch.float
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -27,14 +22,14 @@ def train_evaluate(parameterization):
     NC, x, y, N, d, xts, yts = readData('C:/Users/avishek.ram/Documents/GitHub/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data')
 
     #training loader
-    my_x = x[:1000,:]
-    my_y = y[:1000,:]
+    my_x = x#[:1000,:]
+    my_y = y#[:1000,:]
 
     tensor_x = torch.Tensor(my_x)
     tensor_y = torch.Tensor(my_y)
 
     my_dataset = TensorDataset(tensor_x, tensor_y)
-    training_loader = DataLoader(my_dataset)
+    training_loader = DataLoader(my_dataset, batch_size= parameterization.get("batch_size", 7), shuffle= True)
 
     #testing loader
     test_x = xts
@@ -44,14 +39,9 @@ def train_evaluate(parameterization):
     tensor_test_y = torch.Tensor(test_y)
 
     test_dataset = TensorDataset(tensor_test_x, tensor_test_y)
-    test_loader = DataLoader(test_dataset)
+    test_loader = DataLoader(dataset= test_dataset)
     # constructing a new training data loader allows us to tune the batch size
-    # train_loader = torch.utils.data.DataLoader(trainset,
-    #                             batch_size=parameterization.get("batchsize", 32),
-    #                             shuffle=True,
-    #                             num_workers=0,
-    #                             pin_memory=True)
-
+    
     train_loader  = training_loader # or use predefined
 
     # Get neural net
@@ -72,10 +62,13 @@ def train_evaluate(parameterization):
 def main_func():
     best_parameters, values, experiment, model = optimize(
         parameters=[
-            {"name": "lr", "type": "range", "bounds": [0.0002114354244, 0.00024], "log_scale": True},
+            {"name": "lr", "type": "range", "bounds": [0.0001, 0.0003], "log_scale": True},
             {"name": "lambda", "type": "range", "bounds":[1e-6, 0.9]},
+            {"name": "momentum", "type": "range", "bounds":[0.1, 0.99999]},
             {"name": "n_hidden", "type": "range", "bounds": [1, 50]},
-            #{"name": "stepsize", "type": "range", "bounds": [20, 40]},        
+            {"name": "batch_size", "type": "range", "bounds": [1, 100]},        
+            {"name": "dampening", "type": "range", "bounds": [0.0, 0.5]},        
+            {"name": "epochs", "type": "range", "bounds": [1, 1000]},        
         ],
     
         evaluation_function=train_evaluate,
@@ -98,14 +91,14 @@ def net_train(net, train_loader, parameters, dtype, device):
     net.to(dtype=dtype, device=device)
     criterion = nn.MSELoss()
 
-    optim_params = l_rate, lamda, betas, beta, epsilon
+    optim_params = l_rate, lamda, betas, beta, epsilon, parameters.get("momentum", 0.9), parameters.get("dampening", 0.001)
     optims = ['SGD', 'ADAM', 'ADADELTA', 'RMSPROP', 'ADAGRAD']
     
     optim_name = optims[0] #update this to perform hyperparametr tuning for different optimizers
     
     optimizer = get_optimizer(net, name=optim_name, cache= optim_params)
 
-    for _ in range(30):
+    for _ in range(parameters.get("epochs",10)):
         for inputs, labels in train_loader:
             # move data to proper dtype and device
             inputs = inputs.to(dtype=dtype, device=device)
@@ -131,6 +124,19 @@ def init_net(parameterization, d):
                       nn.Sigmoid())
 
     return model # return untrained model
+
+def get_optimizer(network, name, cache):
+    l_rate, lamda, betas, beta, epsilon, momentum, dampening = cache 
+    if(name == 'SGD'):
+        return torch.optim.SGD(network.parameters(), lr=l_rate, weight_decay= lamda, momentum= momentum, dampening=dampening)
+    elif(name == 'ADAM'):
+        return torch.optim.Adam(network.parameters(), lr=l_rate, betas= betas,  weight_decay= lamda)
+    elif(name == 'ADADELTA'):
+        return torch.optim.Adadelta(network.parameters(), lr=l_rate, eps= epsilon,rho= beta, weight_decay = lamda)
+    elif(name == 'RMSPROP'):
+        return torch.optim.RMSprop(network.parameters(), lr=l_rate, eps= epsilon, weight_decay = lamda)
+    elif(name == 'ADAGRAD'):
+        return torch.optim.Adagrad(network.parameters(), lr=l_rate, eps= epsilon, weight_decay = lamda)
 
 if __name__ == '__main__':
     main_func()

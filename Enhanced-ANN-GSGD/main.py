@@ -26,9 +26,9 @@ def GSGD_ANN(filePath):
     seed(1)
     
     #model parameters
-    l_rate = 0.0002314354244#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
+    l_rate =  0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
     n_hidden = 36 #4
-    lamda =  1e-06#0.0001  #Lambda will be used for L2 regularizaion
+    lamda =  0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
     betas = (0.9, 0.999)
     beta = 0.9
     epsilon = 1e-8
@@ -262,7 +262,7 @@ def back_propagation(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, f
         tensor_y = torch.Tensor(y[shuffled_idxs])
 
         my_dataset = TensorDataset(tensor_x, tensor_y)
-        training_loader = DataLoader(my_dataset, batch_size=7, shuffle=True)
+        training_loader = DataLoader(my_dataset, batch_size=77, shuffle=True)
 
         for epoch in range(epochs):
             
