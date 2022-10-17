@@ -62,7 +62,7 @@ def GSGD_ANN(filePath):
     versetnum = 5 #number of batches used for verification
     epochs = 30
     revisitNum = 3
-    batch_size = 7
+    batch_size = 77
 
     #evaluate GSGD
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD, T, batch_size
