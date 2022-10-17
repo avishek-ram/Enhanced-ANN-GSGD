@@ -68,7 +68,7 @@ def main_func():
             {"name": "n_hidden", "type": "range", "bounds": [1, 50]},
             {"name": "batch_size", "type": "range", "bounds": [1, 100]},        
             {"name": "dampening", "type": "range", "bounds": [0.0, 0.5]},        
-            {"name": "epochs", "type": "range", "bounds": [1, 1000]},        
+            {"name": "epochs", "type": "range", "bounds": [1, 40]},        
         ],
     
         evaluation_function=train_evaluate,
