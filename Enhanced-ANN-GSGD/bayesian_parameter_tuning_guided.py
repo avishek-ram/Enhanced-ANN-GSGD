@@ -9,9 +9,10 @@ from ax.utils.tutorials.cnn_utils import  train, evaluate # evaluate can also be
 from readData import readData
 import torch
 import torch.nn as nn
+from random import seed
 
 
-torch.manual_seed(12345)
+seed(1)
 
 #torch.cuda.set_device(0) #this is sometimes necessary for me
 dtype = torch.float
@@ -19,11 +20,11 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def train_evaluate(parameterization):
-    NC, x, y, N, d, xts, yts = readData('C:/Users/avishek.ram/Documents/GitHub/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data')
+    NC, x, y, N, d, xts, yts = readData('/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data')
 
     #training loader
-    my_x = x#[:1000,:]
-    my_y = y#[:1000,:]
+    my_x = x
+    my_y = y
 
     tensor_x = torch.Tensor(my_x)
     tensor_y = torch.Tensor(my_y)
@@ -62,13 +63,16 @@ def train_evaluate(parameterization):
 def main_func():
     best_parameters, values, experiment, model = optimize(
         parameters=[
-            {"name": "lr", "type": "range", "bounds": [0.0001, 0.0003], "log_scale": True},
+            {"name": "lr", "type": "range", "bounds": [0.0001, 0.0002], "log_scale": True},
             {"name": "lambda", "type": "range", "bounds":[1e-6, 0.9]},
-            {"name": "momentum", "type": "range", "bounds":[0.1, 0.99999]},
-            {"name": "n_hidden", "type": "range", "bounds": [1, 50]},
-            {"name": "batch_size", "type": "range", "bounds": [1, 100]},        
-            {"name": "dampening", "type": "range", "bounds": [0.0, 0.5]},        
-            {"name": "epochs", "type": "range", "bounds": [1, 40]},        
+            {"name": "momentum", "type": "range", "bounds":[0.1, 0.5]},
+            {"name": "n_hiddenA", "type": "range", "bounds": [1, 50]},
+            {"name": "n_hiddenB", "type": "range", "bounds": [1, 50]},
+            {"name": "n_hiddenC", "type": "range", "bounds": [1, 50]},
+            {"name": "n_hiddenD", "type": "range", "bounds": [1, 50]},
+            {"name": "batch_size", "type": "range", "bounds": [1, 1000]},        
+            {"name": "dampening", "type": "range", "bounds": [0.0, 0.9]},        
+            {"name": "epochs", "type": "range", "bounds": [1, 30]},        
         ],
     
         evaluation_function=train_evaluate,
@@ -118,10 +122,16 @@ def init_net(parameterization, d):
 
     #set architure of network here
     model = nn.Sequential(
-                      nn.Linear(d, parameterization.get("n_hidden",4)),
+                      nn.Linear(d, parameterization.get("n_hiddenA",4)),
                       nn.Sigmoid(),
-                      nn.Linear(parameterization.get("n_hidden", 4), 1),
-                      nn.Sigmoid())
+                      nn.Linear(parameterization.get("n_hiddenA",4), parameterization.get("n_hiddenB",4)),
+                      nn.Sigmoid(),
+                      nn.Linear(parameterization.get("n_hiddenB",4), parameterization.get("n_hiddenC",4)),
+                      nn.Sigmoid(),
+                      nn.Linear(parameterization.get("n_hiddenC",4), parameterization.get("n_hiddenD",4)),
+                      nn.Sigmoid(),
+                      nn.Linear(parameterization.get("n_hiddenD", 4), 1),
+                      nn.Sigmoid()).to(device=device)
 
     return model # return untrained model
 

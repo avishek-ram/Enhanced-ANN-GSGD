@@ -13,7 +13,7 @@ import copy
 from random import seed
 from network import *
 from getError import *
-from validate import *
+from validateSet import *
 from printFinalResults import *
 import torch
 import torch.nn as nn
@@ -29,9 +29,9 @@ def GSGD_ANN(filePath):
     NC, x, y, N, d, xts, yts = readData(filePath)
     
     #model parameters
-    l_rate =  0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
-    n_hidden = 36 #4
-    lamda =  0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
+    l_rate =   0.0001893234363294461#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
+    n_hidden = 21#4
+    lamda = 0.5464585893711085#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
     betas = (0.9, 0.999)
     beta = 0.9
     epsilon = 1e-8
@@ -48,35 +48,40 @@ def GSGD_ANN(filePath):
     network_GSGD = nn.Sequential(
                       nn.Linear(d, n_hidden),
                       nn.Sigmoid(),
-                      nn.Linear(n_hidden, 1),
-                      nn.Sigmoid()).to(device)
+                      nn.Linear(n_hidden, 37),
+                      nn.Sigmoid(),
+                      nn.Linear(37, 31),
+                      nn.Sigmoid(),
+                      nn.Linear(31, 11),
+                      nn.Sigmoid(),
+                      nn.Linear(11, 1),
+                      nn.Sigmoid()).to(device=device)
     optimizer_GSGD = get_optimizer(network_GSGD, name=optim_name, cache= optim_params)
     network_SGD = copy.deepcopy(network_GSGD)
     optimizer_SGD = get_optimizer(network_SGD, name=optim_name, cache= optim_params)
 
-
     # evaluate algorithm GSGD
-    T = math.inf #number of batches to train. set to math.inf if all batches will be used in training
+    T = math.inf #number of batches to use in training. set to math.inf if all batches will be used in training
     is_guided_approach = True
     rho = 7
     versetnum = 5 #number of batches used for verification
     epochs = 30
     revisitNum = 3
-    batch_size = 77
+    batch_size = 32
 
     #evaluate GSGD
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD, T, batch_size
-    evaluate_algorithm(x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache, results_container)
+    evaluate_algorithm(x, y, xts, yts , l_rate, d, NC, lamda, cache, results_container)
 
     # evaluate SGD
     is_guided_approach = False
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD, optimizer_SGD, T, batch_size
-    evaluate_algorithm(x, y, xts, yts , l_rate, n_hidden, d, NC, N, filePath, lamda, cache, results_container)
+    evaluate_algorithm(x, y, xts, yts , l_rate, d, NC, lamda, cache, results_container)
 
     #collction of final results and graphs
     generate_graphs(epochs, results_container, T)
     
-def evaluate_algorithm(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N, filePath, lamda, cache, results_container):
+def evaluate_algorithm(x, y, xts, yts, l_rate, n_inputs, n_outputs, lamda, cache, results_container):
     loss_function = nn.MSELoss()
     StopTrainingFlag = False
     is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer, T, batch_size = cache
@@ -90,11 +95,15 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N,
     #get mini batches
     x_batches, y_batches = [], []
     for input,labels in training_loader:
-        x_batches.append(input.to(device))
-        y_batches.append(labels.to(device))
+        x_batches.append(input)
+        y_batches.append(labels)
     # end
     x_batches = np.array(x_batches)
     y_batches = np.array(y_batches)
+
+    #transform Validation data
+    xts = torch.Tensor(xts).to(device)
+    yts = torch.Tensor(yts).to(device=device, dtype=torch.int)
 
     #Guided Training starts here
     if is_guided_approach:
@@ -125,8 +134,8 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N,
                 #Set Verification Data at the beginning of epoch
                 if getVerificationData:
                     versetindxs = shuffled_batch_indxs[:versetnum]
-                    verset_x = np.array(new_X[versetindxs]) #.reshape(versetnum, n_inputs)
-                    verset_response = np.array(new_y[versetindxs]) #.reshape(versetnum, n_inputs)
+                    verset_x = np.array(new_X[versetindxs]) 
+                    verset_response = np.array(new_y[versetindxs])
                     batch_nums = batch_nums - versetnum
                     new_X = np.delete(new_X, versetindxs, axis=0)
                     new_y = np.delete(new_y, versetindxs, axis=0)
@@ -141,7 +150,7 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N,
                     dataset_y.append(y_inst)
 
                     #1  train Network
-                    train_network(network, x_inst, y_inst, l_rate, n_outputs, lamda, n_inputs, loss_function, optimizer)
+                    train_network(network, x_inst.to(device= device), y_inst.to(device= device), loss_function, optimizer)
 
                     #now get verification data loss
                     veridxperms = np.random.permutation(versetnum-1)
@@ -154,8 +163,8 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N,
                     #Revist Previous Batches of Data and recalculate their
                     #losses only. WE DO NOT RE-UPDATE THE ENTIRE NETWORK WEIGHTS HERE. 
                     if revisit:
-                        revisit_dataX = np.array(dataset_X) #.reshape(len(dataset_X), n_inputs)
-                        revisit_dataY = np.array(dataset_y) #.reshape(len(dataset_y), 1)
+                        revisit_dataX = np.array(dataset_X)
+                        revisit_dataY = np.array(dataset_y)
 
                         if loopCount == 1 or loopCount < revisitNum:
                             loopend = loopCount
@@ -200,12 +209,11 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N,
                             x_inst = this_dataX[guidedIdx]
                             y_inst = this_dataY[guidedIdx]
                             
-                            train_network(network, x_inst, y_inst, l_rate, n_outputs, lamda, n_inputs, loss_function, optimizer)
+                            train_network(network, x_inst.to(device= device), y_inst.to(device= device), loss_function, optimizer)
 
                             #Get Verification Data Loss
                             verIDX = np.random.permutation(versetnum)[0]
 
-                            # verLoss  = getError(verIDX, verset_x, verset_response, network, n_outputs)
                             verLoss  = getErrorMSE(verIDX, verset_x, verset_response, network, loss_function)
                             prev_error = verLoss
                     
@@ -221,18 +229,16 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N,
                 if StopTrainingFlag or is_done: 
                     break
         
-                doTerminate, SR, E = validate(
-                            xts, network, yts, iteration, n_outputs, epoch+1, loss_function)
+            SR, E = validate(xts, network, yts, loss_function)
 
-                if(SR.item() > epoch_sr):
-                    epoch_sr = SR.item()
-                    epoch_E = E
-                print('Epoch : %s' % str(epoch+1))
-                print('Success Rate: %s' % SR.item())
-                print('Error Rate: %s' % E)
-                if epoch == 0:
-                    singlepochSRGSGD.append(SR.item())
-
+            if(SR.item() > epoch_sr):
+                epoch_sr = SR.item()
+                epoch_E = E
+            print('Epoch : %s' % str(epoch+1))
+            print('Success Rate: %s' % SR.item())
+            print('Error Rate: %s' % E)
+            if epoch == 0:
+                singlepochSRGSGD.append(SR.item())
 
             #Epoch Completes here
             GSGD_SRoverEpochs.append(SR.item())
@@ -259,9 +265,7 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N,
                 optimizer.step()
 
             iteration = 0
-            doTerminate, SR, E = validate(
-                            xts, network, yts, iteration, n_outputs, epoch+1, loss_function)
-
+            SR, E = validate(xts, network, yts, loss_function)
             SGD_SRoverEpochs.append(SR.item())
             SGD_EoverEpochs.append(E)
 
@@ -272,11 +276,16 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_hidden, n_inputs, n_outputs, N,
                 print_results_final(xts, network, yts, loss_function, type='original')
 
 if __name__ == '__main__':
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename(
-        initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
-    print(file_path)
-    if(file_path == ''):
-        print('File not found')
+    # root = tk.Tk()
+    # root.withdraw()
+    # file_path = filedialog.askopenfilename(
+    #     initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
+    # print(file_path)
+    # if(file_path == ''):
+    #     print('File not found')
+    # GSGD_ANN(file_path)
+
+    #below ccode is only used in environment not supporting GUI/Tkinter, comment the above code wen using this
+    file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
+    #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/BreastCancerDiagnostic.data'
     GSGD_ANN(file_path)

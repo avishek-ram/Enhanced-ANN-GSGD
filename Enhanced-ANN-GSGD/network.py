@@ -5,20 +5,20 @@ from math import exp
 import torch
 import torch.nn as nn
 
-def train_network(network, x, y, l_rate, n_outputs, lamda, n_inputs, loss_function, optimizer):
-    for data_x, data_y in zip(x,y):
-        network.zero_grad()
-        pred_y = network(data_x)
-        loss = loss_function(pred_y, data_y)
-        loss.backward()
+this_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        optimizer.step()
+def train_network(network, data_x, data_y, loss_function, optimizer):
+    network.zero_grad()
+    pred_y = network(data_x)
+    loss = loss_function(pred_y, data_y)
+    loss.backward()
+    optimizer.step()
 
 def get_optimizer(network, name, cache):
     l_rate, lamda, betas, beta, epsilon = cache 
     if(name == 'SGD'):
         #return torch.optim.SGD(network.parameters(), lr=l_rate, weight_decay= lamda, momentum=0.4962894314251748, dampening=0.45076563535258174)
-        return torch.optim.SGD(network.parameters(), lr=l_rate, weight_decay= lamda, momentum=0.2827489336915966, dampening=0.04024708550423384)
+        return torch.optim.SGD(network.parameters(), lr=l_rate, weight_decay= lamda, momentum=  0.22211635671555996, dampening= 0.8074596391059459)
     elif(name == 'ADAM'):
         return torch.optim.Adam(network.parameters(), lr=l_rate, betas= betas,  weight_decay= lamda)
     elif(name == 'ADADELTA'):

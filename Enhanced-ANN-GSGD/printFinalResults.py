@@ -1,13 +1,12 @@
 import numpy as np
-from validate import *
+from validateSet import *
 import matplotlib.pyplot as plt
             
-def print_results_final(inputVal, network, givenOut, loss_function, type = ''):
+def print_results_final(inputVal, network, actual, loss_function, type = ''):
     xval = inputVal
     
     #get predicted value
     predicted = get_predictions(network, xval)
-    actual = torch.from_numpy(givenOut)#.float()
     
     accuracy = torchmetrics.functional.accuracy(predicted, actual)
     loss = loss_function(predicted, actual)
@@ -31,7 +30,7 @@ def print_results_final(inputVal, network, givenOut, loss_function, type = ''):
     #ROC Curve
     plt.figure()
     plt.plot([0.0, 1.0], [0.0, 1.0], linestyle='--')
-    plt.plot(fpr, tpr,'g--', label='ROC', marker='.', markersize='0.02')
+    plt.plot(fpr.cpu().data.numpy(), tpr.cpu().data.numpy(),'g--', label='ROC', marker='.', markersize='0.02')
     plt.title('ROC Curve')
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
@@ -41,7 +40,7 @@ def print_results_final(inputVal, network, givenOut, loss_function, type = ''):
     no_skill = len(actual[actual==1]) / len(actual)
     plt.figure()
     plt.plot([0.0, 1.0], [no_skill,no_skill], linestyle='--')
-    plt.plot(recall_plot, precision_plot,'g--', label='Precision-Recall Curve', marker='.', markersize='0.02')
+    plt.plot(recall_plot.cpu().data.numpy(), precision_plot.cpu().data.numpy(),'g--', label='Precision-Recall Curve', marker='.', markersize='0.02')
     plt.title('Precision Recall Curve')
     plt.ylabel('Precision')
     plt.xlabel('Recall')

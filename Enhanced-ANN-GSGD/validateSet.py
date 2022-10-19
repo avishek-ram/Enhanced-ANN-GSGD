@@ -4,15 +4,15 @@ import torch
 import torchmetrics
 import copy
 from getError import *
+thisdevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
-def validate(inputVal, network, givenOut, nfc, n_outputs, epoch, loss_function):
-    xval = inputVal
+def validate(inputVal, network, actual, loss_function):
+    xval = inputVal.to(device = thisdevice)
     doTerminate = False
+    actual = actual.to(device = thisdevice)
     
     #get predicted value
     predicted = get_predictions(network, xval)
-    actual = torch.from_numpy(givenOut)#.float()
     
     # totCorrect = accuracy_metric(actual, predicted)
     
@@ -20,7 +20,7 @@ def validate(inputVal, network, givenOut, nfc, n_outputs, epoch, loss_function):
     SR = torchmetrics.functional.accuracy(predicted, actual)
     loss = loss_function(predicted, actual)
     E = loss.item()   
-    return doTerminate, SR, E  # PocketGoodWeights, doTerminate, SR, E
+    return SR, E  # PocketGoodWeights, doTerminate, SR, E
 
 # Calculate accuracy percentage
 def accuracy_metric(actual, predicted):
@@ -33,7 +33,6 @@ def accuracy_metric(actual, predicted):
 
 def get_predictions(network, xts):
     network.zero_grad()
-    data_x = torch.from_numpy(xts).float()
-    pred_y = network(data_x)
+    pred_y = network(xts)
     #network.zero_grad()
     return pred_y
