@@ -84,7 +84,7 @@ def generate_graphs(epochs, results_container , T= 0, graph_first_epoch = False)
             plt.plot(singleepochperm, singlepochSRSGD, 'r--', label='SGD Classification Accuracy', linewidth=1)
 
             plt.title('Success Rate of First Epoch')
-            plt.xlabel("Epochs")
+            plt.xlabel("Mini-Batches")
             plt.ylabel("Classification  Accuracy")
             plt.legend(loc=2)
 

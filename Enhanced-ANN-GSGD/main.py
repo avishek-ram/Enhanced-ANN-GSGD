@@ -29,9 +29,9 @@ def GSGD_ANN(filePath):
     NC, x, y, N, d, xts, yts = readData(filePath)
     
     #model parameters
-    l_rate =   0.0001893234363294461#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
-    n_hidden = 21#4
-    lamda = 0.5464585893711085#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
+    l_rate =   1.5717938603348136e-03#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
+    n_hidden = 17#4
+    lamda = 0.15936275945569203#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
     betas = (0.9, 0.999)
     beta = 0.9
     epsilon = 1e-8
@@ -48,13 +48,13 @@ def GSGD_ANN(filePath):
     network_GSGD = nn.Sequential(
                       nn.Linear(d, n_hidden),
                       nn.Sigmoid(),
-                      nn.Linear(n_hidden, 37),
+                      nn.Linear(n_hidden, 6),
                       nn.Sigmoid(),
-                      nn.Linear(37, 31),
+                      nn.Linear(6, 49),
                       nn.Sigmoid(),
-                      nn.Linear(31, 11),
+                      nn.Linear(49, 27),
                       nn.Sigmoid(),
-                      nn.Linear(11, 1),
+                      nn.Linear(27, 1),
                       nn.Sigmoid()).to(device=device)
     optimizer_GSGD = get_optimizer(network_GSGD, name=optim_name, cache= optim_params)
     network_SGD = copy.deepcopy(network_GSGD)
@@ -65,9 +65,9 @@ def GSGD_ANN(filePath):
     is_guided_approach = True
     rho = 7
     versetnum = 5 #number of batches used for verification
-    epochs = 30
+    epochs = 15
     revisitNum = 3
-    batch_size = 32
+    batch_size = 30#891#32
 
     #evaluate GSGD
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD, T, batch_size
@@ -259,8 +259,10 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_inputs, n_outputs, lamda, cache
 
             for et in range(batch_nums):
                 network.zero_grad()
-                pred_y = network(new_X[et])
-                loss = loss_function(pred_y, new_y[et])
+                x_inst = new_X[et]
+                y_inst = new_y[et]
+                pred_y = network(x_inst.to(device= device))
+                loss = loss_function(pred_y, y_inst.to(device= device))
                 loss.backward()
                 optimizer.step()
 
