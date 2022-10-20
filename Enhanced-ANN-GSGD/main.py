@@ -29,9 +29,9 @@ def GSGD_ANN(filePath):
     NC, x, y, N, d, xts, yts = readData(filePath)
     
     #model parameters
-    l_rate =   1.5717938603348136e-03#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
-    n_hidden = 17#4
-    lamda = 0.15936275945569203#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
+    l_rate = 0.0002314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
+    n_hidden = 36#4
+    lamda =  1e-06#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
     betas = (0.9, 0.999)
     beta = 0.9
     epsilon = 1e-8
@@ -48,13 +48,7 @@ def GSGD_ANN(filePath):
     network_GSGD = nn.Sequential(
                       nn.Linear(d, n_hidden),
                       nn.Sigmoid(),
-                      nn.Linear(n_hidden, 6),
-                      nn.Sigmoid(),
-                      nn.Linear(6, 49),
-                      nn.Sigmoid(),
-                      nn.Linear(49, 27),
-                      nn.Sigmoid(),
-                      nn.Linear(27, 1),
+                      nn.Linear(n_hidden, 1),
                       nn.Sigmoid()).to(device=device)
     optimizer_GSGD = get_optimizer(network_GSGD, name=optim_name, cache= optim_params)
     network_SGD = copy.deepcopy(network_GSGD)
