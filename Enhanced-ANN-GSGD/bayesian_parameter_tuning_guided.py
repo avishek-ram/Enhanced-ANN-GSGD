@@ -63,15 +63,12 @@ def train_evaluate(parameterization):
 def main_func():
     best_parameters, values, experiment, model = optimize(
         parameters=[
-            {"name": "lr", "type": "range", "bounds": [1e-20, 1.0], "log_scale": True},
-            {"name": "lambda", "type": "range", "bounds":[1e-20, 1.0]},
-            {"name": "momentum", "type": "range", "bounds":[1e-20, 1.0]},
-            {"name": "n_hiddenA", "type": "range", "bounds": [1, 500]},
-            # {"name": "n_hiddenB", "type": "range", "bounds": [1, 50]},
-            # {"name": "n_hiddenC", "type": "range", "bounds": [1, 50]},
-            # {"name": "n_hiddenD", "type": "range", "bounds": [1, 50]},
+            {"name": "lr", "type": "range", "bounds": [1e-7, 0.9], "log_scale": True},
+            {"name": "lambda", "type": "range", "bounds":[1e-7, 0.9]},
+            #{"name": "momentum", "type": "range", "bounds":[1e-20, 1.0]},
+            {"name": "n_hiddenA", "type": "range", "bounds": [300, 400]},
             {"name": "batch_size", "type": "range", "bounds": [1, 1000]},        
-            {"name": "dampening", "type": "range", "bounds": [0.0, 0.9]},        
+            #{"name": "dampening", "type": "range", "bounds": [0.0, 0.9]},        
             {"name": "epochs", "type": "range", "bounds": [1, 30]},        
         ],
     
@@ -88,8 +85,8 @@ def net_train(net, train_loader, parameters, dtype, device):
 
     l_rate = parameters.get("lr", 0.00085)
     lamda = parameters.get("lambda", 0.001)  #Lambda will be used for L2 regularizaion
-    momentum =  parameters.get("momentum", 0.9) 
-    dampening = parameters.get("dampening","0.9")
+    #momentum =  parameters.get("momentum", 0.9) 
+    # dampening = parameters.get("dampening","0.9")
     betas = (0.9, 0.999)
     beta = 0.9
     epsilon = 1e-8
@@ -97,7 +94,7 @@ def net_train(net, train_loader, parameters, dtype, device):
     net.to(dtype=dtype, device=device)
     criterion = nn.MSELoss()
 
-    optim_params = l_rate, lamda, betas, beta, epsilon, momentum, dampening
+    optim_params = l_rate, lamda, betas, beta, epsilon #, momentum, dampening
     optims = ['SGD', 'ADAM', 'ADADELTA', 'RMSPROP', 'ADAGRAD']
     
     optim_name = optims[0] #update this to perform hyperparametr tuning for different optimizers
@@ -132,9 +129,9 @@ def init_net(parameterization, d):
     return model # return untrained model
 
 def get_optimizer(network, name, cache):
-    l_rate, lamda, betas, beta, epsilon, momentum, dampening = cache 
+    l_rate, lamda, betas, beta, epsilon = cache 
     if(name == 'SGD'):
-        return torch.optim.SGD(network.parameters(), lr=l_rate, weight_decay= lamda, momentum=momentum, dampening=dampening)
+        return torch.optim.SGD(network.parameters(), lr=l_rate, weight_decay= lamda)
     elif(name == 'ADAM'):
         return torch.optim.Adam(network.parameters(), lr=l_rate, betas= betas,  weight_decay= lamda)
     elif(name == 'ADADELTA'):
