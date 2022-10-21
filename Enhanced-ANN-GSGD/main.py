@@ -31,7 +31,7 @@ def GSGD_ANN(filePath):
     #model parameters
     l_rate =  0.02#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
     n_hidden = 300#36#29#50#36#4
-    lamda =  1e-06#0.5964800918102662#0.06067045242012771#1e-05#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
+    lamda =  1e-05#0.5964800918102662#0.06067045242012771#1e-05#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
     betas = (0.9, 0.999)
     beta = 0.9
     epsilon = 1e-8
@@ -57,11 +57,11 @@ def GSGD_ANN(filePath):
     # evaluate algorithm GSGD
     T = math.inf #number of batches to use in training. set to math.inf if all batches will be used in training
     is_guided_approach = True
-    rho = 7
+    rho = 20
     versetnum = 5 #number of batches used for verification
-    epochs = 27#15
-    revisitNum = 3
-    batch_size = 5#812#122#468#300#891#32
+    epochs = 30#27#15
+    revisitNum = 15
+    batch_size = 15#812#122#468#300#891#32
 
     #evaluate GSGD
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD, T, batch_size
@@ -189,8 +189,8 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_inputs, n_outputs, lamda, cache
                     for k in range(loopCount):
                         avgBatchLosses = np.append(avgBatchLosses, np.mean(psi[k]))
                     
-                    this_dataX = np.array(dataset_X) #.reshape(len(dataset_X), n_inputs)
-                    this_dataY = np.array(dataset_y) #.reshape(len(dataset_y), 1)
+                    this_dataX = np.array(dataset_X)
+                    this_dataY = np.array(dataset_y)
 
                     numel_avgBatch = len(avgBatchLosses)
                     avgBatchLosses_idxs = np.argsort(avgBatchLosses)[::-1]
