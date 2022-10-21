@@ -30,7 +30,7 @@ def GSGD_ANN(filePath):
     
     #model parameters
     l_rate =  0.02#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
-    n_hidden = 300#36#29#50#36#4
+    n_hidden = 30#36#29#50#36#4
     lamda =  1e-06#0.5964800918102662#0.06067045242012771#1e-05#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
     betas = (0.9, 0.999)
     beta = 0.9
@@ -61,7 +61,7 @@ def GSGD_ANN(filePath):
     versetnum = 5 #number of batches used for verification
     epochs = 30#27#15
     revisitNum = 15
-    batch_size = 30#812#122#468#300#891#32
+    batch_size = 40#812#122#468#300#891#32
 
     #evaluate GSGD
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD, T, batch_size

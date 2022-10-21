@@ -30,7 +30,7 @@ def train_evaluate(parameterization):
     tensor_y = torch.Tensor(my_y)
 
     my_dataset = TensorDataset(tensor_x, tensor_y)
-    training_loader = DataLoader(my_dataset, batch_size= parameterization.get("batch_size", 7), shuffle= True)
+    training_loader = DataLoader(my_dataset, batch_size= parameterization.get("batch_size", 15), shuffle= True)
 
     #testing loader
     test_x = xts
@@ -83,8 +83,8 @@ def main_func():
 
 def net_train(net, train_loader, parameters, dtype, device):
 
-    l_rate = parameters.get("lr", 0.00085)
-    lamda = parameters.get("lambda", 0.001)  #Lambda will be used for L2 regularizaion
+    l_rate = parameters.get("lr", 0.02)
+    lamda = parameters.get("lambda", 1e-05)  #Lambda will be used for L2 regularizaion
     #momentum =  parameters.get("momentum", 0.9) 
     # dampening = parameters.get("dampening","0.9")
     betas = (0.9, 0.999)
@@ -121,9 +121,9 @@ def init_net(parameterization, d):
 
     #set architure of network here
     model = nn.Sequential(
-                      nn.Linear(d, parameterization.get("n_hiddenA",4)),
+                      nn.Linear(d, parameterization.get("n_hiddenA",300)),
                       nn.Sigmoid(),
-                      nn.Linear(parameterization.get("n_hiddenA", 4), 1),
+                      nn.Linear(parameterization.get("n_hiddenA", 300), 1),
                       nn.Sigmoid()).to(device=device)
 
     return model # return untrained model
