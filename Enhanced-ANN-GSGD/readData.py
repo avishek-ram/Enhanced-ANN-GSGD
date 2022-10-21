@@ -22,7 +22,7 @@ def readData(file_path):
     
     if apply_smote_oversampling:
         #avishek- start oversampling minority class in training data only    
-        oversample = SMOTE(random_state=20)
+        oversample = SMOTE()
     
         x, y = oversample.fit_resample(X_train_old,Y_train_old)
     else:
