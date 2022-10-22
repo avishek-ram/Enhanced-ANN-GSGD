@@ -29,8 +29,8 @@ def GSGD_ANN(filePath):
     NC, x, y, N, d, xts, yts = readData(filePath)
     
     #model parameters
-    l_rate =  0.02#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
-    n_hidden = 30#36#29#50#36#4
+    l_rate =  0.019987676959698759#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
+    n_hidden = 300#36#29#50#36#4
     lamda =  1e-06#0.5964800918102662#0.06067045242012771#1e-05#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
     betas = (0.9, 0.999)
     beta = 0.9
@@ -41,8 +41,8 @@ def GSGD_ANN(filePath):
     optim_name = optims[0]
 
     #Results Container
-    GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs, singlepochSRGSGD, singlepochSRSGD = [], [], [], [], [], []
-    results_container = GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs, singlepochSRGSGD, singlepochSRSGD
+    GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs = [], [], [], []
+    results_container = GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs
 
     #initialize both networks #should have the same initial weights
     network_GSGD = nn.Sequential(
@@ -57,30 +57,30 @@ def GSGD_ANN(filePath):
     # evaluate algorithm GSGD
     T = math.inf #number of batches to use in training. set to math.inf if all batches will be used in training
     is_guided_approach = True
-    rho = 20
+    rho = 15
     versetnum = 5 #number of batches used for verification
     epochs = 30#27#15
-    revisitNum = 15
-    batch_size = 40#812#122#468#300#891#32
+    revisitNum = 10
+    batch_size = 30#812#122#468#300#891#32
 
     #evaluate GSGD
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD, T, batch_size
-    evaluate_algorithm(x, y, xts, yts , l_rate, d, NC, lamda, cache, results_container)
+    evaluate_algorithm(x, y, xts, yts, cache, results_container)
 
     # evaluate SGD
     is_guided_approach = False
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD, optimizer_SGD, T, batch_size
-    evaluate_algorithm(x, y, xts, yts , l_rate, d, NC, lamda, cache, results_container)
+    evaluate_algorithm(x, y, xts, yts, cache, results_container)
 
     #collction of final results and graphs
-    generate_graphs(epochs, results_container, T)
+    generate_graphs(epochs, results_container)
     
-def evaluate_algorithm(x, y, xts, yts, l_rate, n_inputs, n_outputs, lamda, cache, results_container):
+def evaluate_algorithm(x, y, xts, yts, cache, results_container):
     loss_function = nn.MSELoss()
     StopTrainingFlag = False
     is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer, T, batch_size = cache
     
-    GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs, singlepochSRGSGD, singlepochSRSGD  = results_container
+    GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs  = results_container
 
     #transform into tensors and setup dataLoader with mini batches
     my_dataset = TensorDataset(torch.Tensor(x), torch.Tensor(y))
@@ -103,8 +103,6 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_inputs, n_outputs, lamda, cache
     if is_guided_approach:
         prev_error = math.inf #set initial error to very large number
         for epoch in range(epochs):
-            epoch_sr =  0.0
-            epoch_E = math.inf
             getVerificationData = True
             verset_x, verset_response, avgBatchLosses, dataset_X, dataset_y, psi = [], [], [], [], [], []
             loopCount = -1
@@ -147,7 +145,7 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_inputs, n_outputs, lamda, cache
                     train_network(network, x_inst.to(device= device), y_inst.to(device= device), loss_function, optimizer)
 
                     #now get verification data loss
-                    veridxperms = np.random.permutation(versetnum-1)
+                    veridxperms = np.random.permutation(versetnum)
                     veridxperm = veridxperms[0]
                     verloss = getErrorMSE(veridxperm, verset_x, verset_response, network, loss_function)
                     pos = 1
@@ -224,15 +222,9 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_inputs, n_outputs, lamda, cache
                     break
         
             SR, E = validate(xts, network, yts, loss_function)
-
-            if(SR.item() > epoch_sr):
-                epoch_sr = SR.item()
-                epoch_E = E
             print('Epoch : %s' % str(epoch+1))
             print('Success Rate: %s' % SR.item())
             print('Error Rate: %s' % E)
-            if epoch == 0:
-                singlepochSRGSGD.append(SR.item())
 
             #Epoch Completes here
             GSGD_SRoverEpochs.append(SR.item())
@@ -241,11 +233,10 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_inputs, n_outputs, lamda, cache
         print_results_final(xts, network, yts, loss_function, type='guided')
 
     else: #not guided training
-        print("Not Guided Training started")
+        print("\n\n-----Not Guided Training------")
         batch_nums = len(x_batches)
 
         for epoch in range(epochs):
-
             #shuffle batches
             shuffled_batch_indxs = np.random.permutation(batch_nums)
             new_X = x_batches[shuffled_batch_indxs]
@@ -265,10 +256,7 @@ def evaluate_algorithm(x, y, xts, yts, l_rate, n_inputs, n_outputs, lamda, cache
             SGD_SRoverEpochs.append(SR.item())
             SGD_EoverEpochs.append(E)
 
-            if(epoch == epochs-1):    
-                print('Epoch : %s' % str(epoch+1))
-                print('Success Rate: %s' % SR.item())
-                print('Error Rate: %s' % E)
+            if(epoch == epochs-1):
                 print_results_final(xts, network, yts, loss_function, type='original')
 
 if __name__ == '__main__':

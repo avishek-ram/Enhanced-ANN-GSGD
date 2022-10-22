@@ -8,7 +8,6 @@ thisdevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def validate(inputVal, network, actual, loss_function):
     xval = inputVal.to(device = thisdevice)
-    doTerminate = False
     actual = actual.to(device = thisdevice)
     
     #get predicted value

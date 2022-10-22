@@ -21,6 +21,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def train_evaluate(parameterization):
     NC, x, y, N, d, xts, yts = readData('/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data')
+    #NC, x, y, N, d, xts, yts = readData('/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/cancer.data')
 
     #training loader
     my_x = x
@@ -63,10 +64,10 @@ def train_evaluate(parameterization):
 def main_func():
     best_parameters, values, experiment, model = optimize(
         parameters=[
-            {"name": "lr", "type": "range", "bounds": [1e-7, 0.9], "log_scale": True},
-            {"name": "lambda", "type": "range", "bounds":[1e-7, 0.9]},
+            {"name": "lr", "type": "range", "bounds": [0.02, 0.03], "log_scale": True},
+            #{"name": "lambda", "type": "range", "bounds":[0.0,0.9]},
             #{"name": "momentum", "type": "range", "bounds":[1e-20, 1.0]},
-            {"name": "n_hiddenA", "type": "range", "bounds": [300, 400]},
+            {"name": "n_hiddenA", "type": "range", "bounds": [1, 50]},
             {"name": "batch_size", "type": "range", "bounds": [1, 1000]},        
             #{"name": "dampening", "type": "range", "bounds": [0.0, 0.9]},        
             {"name": "epochs", "type": "range", "bounds": [1, 30]},        
@@ -84,7 +85,7 @@ def main_func():
 def net_train(net, train_loader, parameters, dtype, device):
 
     l_rate = parameters.get("lr", 0.02)
-    lamda = parameters.get("lambda", 1e-05)  #Lambda will be used for L2 regularizaion
+    lamda = 1e-06#parameters.get("lambda", 1e-05)  #Lambda will be used for L2 regularizaion
     #momentum =  parameters.get("momentum", 0.9) 
     # dampening = parameters.get("dampening","0.9")
     betas = (0.9, 0.999)

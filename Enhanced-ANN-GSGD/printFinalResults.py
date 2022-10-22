@@ -18,14 +18,14 @@ def print_results_final(inputVal, network, actual, loss_function, type = ''):
     fpr, tpr, thresholds =  torchmetrics.functional.roc(preds=predicted, target=actual)
     precision_plot, recall_plot, thresholds_prc =  torchmetrics.functional.precision_recall_curve(preds=predicted, target=actual)
 
-    print('--Results------'+ type)
+    print('\n\n--Results------'+ type)
     print('Classification Accuracy: ', accuracy.item())
     print('overall Error', overall_E)
     print('Recall: ', recall.item())
     print('Precision: ', precision.item())
     print('Specificity: ', specifity.item())
     print('F1-score: ', f1score.item())
-    print('----------------\n\n')
+    print('----------------')
 
     #ROC Curve
     plt.figure()
@@ -46,11 +46,10 @@ def print_results_final(inputVal, network, actual, loss_function, type = ''):
     plt.xlabel('Recall')
     plt.savefig('graphs/'+ type +'/Precision_recall_curve.png')
 
-def generate_graphs(epochs, results_container , T= 0, graph_first_epoch = False):
-    GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs, singlepochSRGSGD, singlepochSRSGD = results_container
+def generate_graphs(epochs, results_container):
+    GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs = results_container
 
     Epocperm = [ i+1 for i in range(epochs)]
-    singleepochperm = [ i+1 for i in range(len(singlepochSRGSGD))]
 
     # Error Convergence of GSGD and SGD
     plt.figure()
@@ -75,19 +74,3 @@ def generate_graphs(epochs, results_container , T= 0, graph_first_epoch = False)
     plt.legend(loc=2)
 
     plt.savefig('graphs/success_rate_general.png')
-
-    # Success rate of GSGD and SGD for a single epoch # Works with T number of iterations only
-    if graph_first_epoch:
-        try:
-            plt.figure()
-            plt.plot(singleepochperm, singlepochSRGSGD, label='GSGD Classification Accuracy', linewidth=1)
-            plt.plot(singleepochperm, singlepochSRSGD, 'r--', label='SGD Classification Accuracy', linewidth=1)
-
-            plt.title('Success Rate of First Epoch')
-            plt.xlabel("Mini-Batches")
-            plt.ylabel("Classification  Accuracy")
-            plt.legend(loc=2)
-
-            plt.savefig('graphs/classification_accuracy_single epoch.png')
-        except:
-            """error in Single Epoch Graph"""
