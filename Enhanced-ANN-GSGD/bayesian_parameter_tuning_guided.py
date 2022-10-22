@@ -64,11 +64,11 @@ def train_evaluate(parameterization):
 def main_func():
     best_parameters, values, experiment, model = optimize(
         parameters=[
-            {"name": "lr", "type": "range", "bounds": [0.02, 0.03], "log_scale": True},
-            #{"name": "lambda", "type": "range", "bounds":[0.0,0.9]},
+            {"name": "lr", "type": "range", "bounds": [0.0001, 0.02], "log_scale": True},
+            {"name": "lambda", "type": "range", "bounds":[0.0,0.001]},
             #{"name": "momentum", "type": "range", "bounds":[1e-20, 1.0]},
             {"name": "n_hiddenA", "type": "range", "bounds": [1, 50]},
-            {"name": "batch_size", "type": "range", "bounds": [1, 1000]},        
+            {"name": "batch_size", "type": "range", "bounds": [1, 100]},        
             #{"name": "dampening", "type": "range", "bounds": [0.0, 0.9]},        
             {"name": "epochs", "type": "range", "bounds": [1, 30]},        
         ],
@@ -85,7 +85,7 @@ def main_func():
 def net_train(net, train_loader, parameters, dtype, device):
 
     l_rate = parameters.get("lr", 0.02)
-    lamda = 1e-06#parameters.get("lambda", 1e-05)  #Lambda will be used for L2 regularizaion
+    lamda = parameters.get("lambda", 1e-05)  #Lambda will be used for L2 regularizaion
     #momentum =  parameters.get("momentum", 0.9) 
     # dampening = parameters.get("dampening","0.9")
     betas = (0.9, 0.999)
@@ -123,8 +123,9 @@ def init_net(parameterization, d):
     #set architure of network here
     model = nn.Sequential(
                       nn.Linear(d, parameterization.get("n_hiddenA",300)),
+                      nn.BatchNorm1d(parameterization.get("n_hiddenA",300)),
                       nn.Sigmoid(),
-                      nn.Linear(parameterization.get("n_hiddenA", 300), 1),
+                      nn.Linear(parameterization.get("n_hiddenA",300), 1),
                       nn.Sigmoid()).to(device=device)
 
     return model # return untrained model
