@@ -35,12 +35,21 @@ def GSGD_ANN_experiment(filePath):
                 NC, x, y, N, d, xts, yts = readData(filePath)
     
                 #model parameters
-                l_rate =  0.02#0.019987676959698759#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
-                n_hidden = 30#36#29#50#36#4
-                lamda =  1e-06#0.5964800918102662#0.06067045242012771#1e-05#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
+                l_rate =   0.02001229522561126#0.019987676959698759#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
+                n_hiddenA = 30#36#29#50#36#4
+                n_hiddenB = 5
+                lamda =  1e-06#0.00014659309759736062#0.5964800918102662#0.06067045242012771#1e-05#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
                 betas = (0.9, 0.999)
                 beta = 0.9
                 epsilon = 1e-8
+
+                T = math.inf #number of batches to use in training. set to math.inf if all batches will be used in training
+                is_guided_approach = True
+                rho = 20
+                versetnum = 5 #number of batches used for verification
+                epochs = 15#27#15
+                revisitNum = 15
+                batch_size = 40#812#122#468#300#891#32
 
                 optim_params = l_rate, lamda, betas, beta, epsilon
 
@@ -50,22 +59,17 @@ def GSGD_ANN_experiment(filePath):
 
                 #initialize both networks #should have the same initial weights
                 network_GSGD = nn.Sequential(
-                                nn.Linear(d, n_hidden),
-                                nn.Sigmoid(),
-                                nn.Linear(n_hidden, 1),
-                                nn.Sigmoid()).to(device=device)
+                      nn.Linear(d, n_hiddenA),
+                      nn.BatchNorm1d(n_hiddenA),
+                      nn.Sigmoid(),
+                      nn.Linear(n_hiddenA, n_hiddenB),
+                      nn.BatchNorm1d(n_hiddenB),
+                      nn.Sigmoid(),
+                      nn.Linear(n_hiddenB, 1),
+                      nn.Sigmoid()).to(device=device)
                 optimizer_GSGD = get_optimizer(network_GSGD, name=optim_name, cache= optim_params)
                 network_SGD = copy.deepcopy(network_GSGD)
                 optimizer_SGD = get_optimizer(network_SGD, name=optim_name, cache= optim_params)
-
-                # evaluate algorithm GSGD
-                T = math.inf #number of batches to use in training. set to math.inf if all batches will be used in training
-                is_guided_approach = True
-                rho = 20
-                versetnum = 5 #number of batches used for verification
-                epochs = 30#27#15
-                revisitNum = 15
-                batch_size = 40#812#122#468#300#891#32
 
                 experiment_param = optim_name, run+1, connlite
 
@@ -89,10 +93,10 @@ def generate_graphs_experiment(epochs, results_container, run, optim_name):
 
     # Error Convergence of GSGD and SGD
     plt.figure()
-    plt.plot(Epocperm, SGD_EoverEpochs, label='SGD Error', linewidth=1)
-    plt.plot(Epocperm, GSGD_EoverEpochs, 'r--', label='GSGD Error', linewidth=1)
+    plt.plot(Epocperm, SGD_EoverEpochs, label=f'{optim_name} Error', linewidth=1)
+    plt.plot(Epocperm, GSGD_EoverEpochs, 'r--', label=f'G{optim_name} Error', linewidth=1)
 
-    plt.title('Error Convergence of GSGD and SGD')
+    plt.title(f'Error Convergence of G{optim_name} and {optim_name}')
     plt.xlabel("Epochs")
     plt.ylabel("Error")
     plt.legend(loc=2)
@@ -101,10 +105,10 @@ def generate_graphs_experiment(epochs, results_container, run, optim_name):
 
     #Success rate GSGD and SGD over Epochs General
     plt.figure()
-    plt.plot(Epocperm, SGD_SRoverEpochs, label='SGD SR', linewidth=1)
-    plt.plot(Epocperm, GSGD_SRoverEpochs, 'r--', label='GSGD SR', linewidth=1)
+    plt.plot(Epocperm, SGD_SRoverEpochs, label=f'{optim_name}', linewidth=1)
+    plt.plot(Epocperm, GSGD_SRoverEpochs, 'r--', label=f'G{optim_name}', linewidth=1)
 
-    plt.title('Classification Accuracy of GSGD and SGD')
+    plt.title(f'Classification Accuracy of G{optim_name} and {optim_name}')
     plt.xlabel("Epochs")
     plt.ylabel("Classification Accuracy")
     plt.legend(loc=2)
@@ -116,7 +120,7 @@ def evaluate_algorithm_experiment(x, y, xts, yts, cache, results_container, expe
     StopTrainingFlag = False
     is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer, T, batch_size = cache
     
-    GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs, singlepochSRGSGD, singlepochSRSGD  = results_container
+    GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs  = results_container
 
     #transform into tensors and setup dataLoader with mini batches
     my_dataset = TensorDataset(torch.Tensor(x), torch.Tensor(y))
@@ -259,14 +263,14 @@ def evaluate_algorithm_experiment(x, y, xts, yts, cache, results_container, expe
         
             SR, E = validate(xts, network, yts, loss_function)
             print('Epoch : %s' % str(epoch+1))
-            print('Success Rate: %s' % SR.item())
+            print('Accuracy: %s' % SR.item())
             print('Error Rate: %s' % E)
             
             #Epoch Completes here
             GSGD_SRoverEpochs.append(SR.item())
             GSGD_EoverEpochs.append(E)
 
-        experiment_results_final(xts, network, yts, loss_function, type='guided')
+        experiment_results_final(xts, network, yts, loss_function, experiment_param, type='guided')
 
     else: #not guided training
         print("Not Guided Training started")
@@ -295,9 +299,9 @@ def evaluate_algorithm_experiment(x, y, xts, yts, cache, results_container, expe
 
             if(epoch == epochs-1):    
                 print('Epoch : %s' % str(epoch+1))
-                print('Success Rate: %s' % SR.item())
+                print('Accuracy: %s' % SR.item())
                 print('Error Rate: %s' % E)
-                experiment_results_final(xts, network, yts, loss_function, type='original')
+                experiment_results_final(xts, network, yts, loss_function, experiment_param, type='original')
 
 def experiment_results_final(inputVal, network, actual, loss_function, experiment_param,  type = ''):
     optim_name, run, connlite = experiment_param
@@ -368,11 +372,15 @@ def experiment_results_final(inputVal, network, actual, loss_function, experimen
             curlite.close()
 
 if __name__ == '__main__':
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename(
-        initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
-    print(file_path)
-    if(file_path == ''):
-        print('File not found')
+     # root = tk.Tk()
+    # root.withdraw()
+    # file_path = filedialog.askopenfilename(
+    #     initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
+    # print(file_path)
+    # if(file_path == ''):
+    #     print('File not found')
+    # GSGD_ANN(file_path)
+
+    #below ccode is only used in environment not supporting GUI/Tkinter, comment the above code wen using this
+    file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
     GSGD_ANN_experiment(file_path)

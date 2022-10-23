@@ -30,7 +30,8 @@ def GSGD_ANN(filePath):
     
     #model parameters
     l_rate =   0.02001229522561126#0.019987676959698759#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
-    n_hidden = 30#36#29#50#36#4
+    n_hiddenA = 30#36#29#50#36#4
+    n_hiddenB = 5
     lamda =  1e-06#0.00014659309759736062#0.5964800918102662#0.06067045242012771#1e-05#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
     betas = (0.9, 0.999)
     beta = 0.9
@@ -40,7 +41,7 @@ def GSGD_ANN(filePath):
     is_guided_approach = True
     rho = 20
     versetnum = 5 #number of batches used for verification
-    epochs = 12#27#15
+    epochs = 15#27#15
     revisitNum = 15
     batch_size = 40#812#122#468#300#891#32
 
@@ -54,10 +55,13 @@ def GSGD_ANN(filePath):
 
     #initialize both networks #should have the same initial weights
     network_GSGD = nn.Sequential(
-                      nn.Linear(d, n_hidden),
-                      nn.BatchNorm1d(n_hidden),
+                      nn.Linear(d, n_hiddenA),
+                      nn.BatchNorm1d(n_hiddenA),
                       nn.Sigmoid(),
-                      nn.Linear(n_hidden, 1),
+                      nn.Linear(n_hiddenA, n_hiddenB),
+                      nn.BatchNorm1d(n_hiddenB),
+                      nn.Sigmoid(),
+                      nn.Linear(n_hiddenB, 1),
                       nn.Sigmoid()).to(device=device)
     optimizer_GSGD = get_optimizer(network_GSGD, name=optim_name, cache= optim_params)
     network_SGD = copy.deepcopy(network_GSGD)
@@ -223,7 +227,7 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
         
             SR, E = validate(xts, network, yts, loss_function)
             print('Epoch : %s' % str(epoch+1))
-            print('Success Rate: %s' % SR.item())
+            print('Accuracy: %s' % SR.item())
             print('Error Rate: %s' % E)
 
             #Epoch Completes here
