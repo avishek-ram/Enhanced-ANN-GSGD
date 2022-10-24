@@ -23,7 +23,7 @@ from main import *
 from data_layer import *
 
 def GSGD_ANN_experiment(filePath):
-    optims = ['SGD', 'ADAM', 'ADADELTA', 'RMSPROP', 'ADAGRAD']
+    optims = ['ADADELTA', 'RMSPROP', 'ADAGRAD','SGD', 'ADAM']
 
     connlite = connect()
 
@@ -35,7 +35,7 @@ def GSGD_ANN_experiment(filePath):
                 NC, x, y, N, d, xts, yts = readData(filePath)
     
                 #model parameters
-                l_rate =   0.02001229522561126#0.019987676959698759#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
+                l_rate =   0.2001229522561126#0.019987676959698759#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
                 n_hiddenA = 30#36#29#50#36#4
                 n_hiddenB = 5
                 lamda =  1e-06#0.00014659309759736062#0.5964800918102662#0.06067045242012771#1e-05#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
@@ -47,7 +47,7 @@ def GSGD_ANN_experiment(filePath):
                 is_guided_approach = True
                 rho = 20
                 versetnum = 5 #number of batches used for verification
-                epochs = 15#27#15
+                epochs = 20#27#15
                 revisitNum = 15
                 batch_size = 40#812#122#468#300#891#32
 
@@ -372,15 +372,14 @@ def experiment_results_final(inputVal, network, actual, loss_function, experimen
             curlite.close()
 
 if __name__ == '__main__':
-     # root = tk.Tk()
-    # root.withdraw()
-    # file_path = filedialog.askopenfilename(
-    #     initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
-    # print(file_path)
-    # if(file_path == ''):
-    #     print('File not found')
-    # GSGD_ANN(file_path)
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename(
+        initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
+    print(file_path)
+    if(file_path == ''):
+        print('File not found')
 
     #below ccode is only used in environment not supporting GUI/Tkinter, comment the above code wen using this
-    file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
+    #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
     GSGD_ANN_experiment(file_path)

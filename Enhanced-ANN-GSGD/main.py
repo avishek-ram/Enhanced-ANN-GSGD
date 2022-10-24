@@ -264,16 +264,16 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
                 print_results_final(xts, network, yts, loss_function, type='original')
 
 if __name__ == '__main__':
-    # root = tk.Tk()
-    # root.withdraw()
-    # file_path = filedialog.askopenfilename(
-    #     initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
-    # print(file_path)
-    # if(file_path == ''):
-    #     print('File not found')
-    # GSGD_ANN(file_path)
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename(
+        initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
+    print(file_path)
+    if(file_path == ''):
+        print('File not found')
+    GSGD_ANN(file_path)
 
     #below ccode is only used in environment not supporting GUI/Tkinter, comment the above code wen using this
-    file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
+    #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
     #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/BreastCancerDiagnostic.data'
     GSGD_ANN(file_path)
