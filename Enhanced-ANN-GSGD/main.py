@@ -29,7 +29,7 @@ def GSGD_ANN(filePath):
     NC, x, y, N, d, xts, yts = readData(filePath)
     
     #model parameters
-    l_rate =   0.02001229522561126#0.019987676959698759#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
+    l_rate =    0.02465229341384616 #0.0195465229341384616#0.2018122514569#0.019987676959698759#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
     n_hiddenA = 30#36#29#50#36#4
     n_hiddenB = 5
     lamda =  1e-06#0.00014659309759736062#0.5964800918102662#0.06067045242012771#1e-05#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
@@ -41,13 +41,13 @@ def GSGD_ANN(filePath):
     is_guided_approach = True
     rho = 20
     versetnum = 5 #number of batches used for verification
-    epochs = 15#27#15
+    epochs = 5#27#15
     revisitNum = 15
     batch_size = 40#812#122#468#300#891#32
 
     optim_params = l_rate, lamda, betas, beta, epsilon
     optims = ['SGD', 'ADAM', 'ADADELTA', 'RMSPROP', 'ADAGRAD']
-    optim_name = optims[0]
+    optim_name = optims[4]
 
     #Results Container
     GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs = [], [], [], []
@@ -264,16 +264,16 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
                 print_results_final(xts, network, yts, loss_function, type='original')
 
 if __name__ == '__main__':
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename(
-        initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
-    print(file_path)
-    if(file_path == ''):
-        print('File not found')
-    GSGD_ANN(file_path)
+    # root = tk.Tk()
+    # root.withdraw()
+    # file_path = filedialog.askopenfilename(
+    #     initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
+    # print(file_path)
+    # if(file_path == ''):
+    #     print('File not found')
 
     #below ccode is only used in environment not supporting GUI/Tkinter, comment the above code wen using this
     #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
     #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/BreastCancerDiagnostic.data'
+    file_path = 'C:/Users/avishek.ram/Documents/GitHub/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
     GSGD_ANN(file_path)
