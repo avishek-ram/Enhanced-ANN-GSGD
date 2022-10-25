@@ -21,15 +21,13 @@ def readData(file_path):
     apply_smote_oversampling = True
     
     if apply_smote_oversampling:
-        #avishek- start oversampling minority class in training data only    
+        #Avishek- start oversampling minority class in training data only    
         oversample = SMOTE()
-    
         x, y = oversample.fit_resample(X_train_old,Y_train_old)
     else:
         x = X_train_old
         y = Y_train_old
-      
-    #old preprocessing(normalization) has been removed, sk learn preprocessing has been added, works better with large datasets #avishek
+
     min_max_scaler = preprocessing.MinMaxScaler()
     x_scaled = min_max_scaler.fit_transform(x.values)
     x = pd.DataFrame(x_scaled)

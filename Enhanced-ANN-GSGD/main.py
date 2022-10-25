@@ -1,6 +1,5 @@
 """
- Programmer: Avishek Ram
- email: avishekram30@gmail.com
+ Programmer: Avishek Anishkar Ram
 """
 from readData import readData
 import numpy as np
@@ -29,31 +28,31 @@ def GSGD_ANN(filePath):
     NC, x, y, N, d, xts, yts = readData(filePath)
     
     #model parameters
-    l_rate =    0.02465229341384616 #0.0195465229341384616#0.2018122514569#0.019987676959698759#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
-    n_hiddenA = 30#36#29#50#36#4
+    l_rate =    0.0035465229341384616
+    n_hiddenA = 30
     n_hiddenB = 5
-    lamda =  1e-06#0.00014659309759736062#0.5964800918102662#0.06067045242012771#1e-05#0.6980844659683136 #1e-06#0.0001  #Lambda will be used for L2 regularizaion
+    lamda =  1e-06
     betas = (0.9, 0.999)
     beta = 0.9
     epsilon = 1e-8
 
-    T = math.inf #number of batches to use in training. set to math.inf if all batches will be used in training
+    T = math.inf #number of batches to use in training. set to math.inf to use all batches
     is_guided_approach = True
     rho = 20
-    versetnum = 5 #number of batches used for verification
-    epochs = 5#27#15
+    versetnum = 5 
+    epochs = 5
     revisitNum = 15
-    batch_size = 40#812#122#468#300#891#32
+    batch_size = 40
 
     optim_params = l_rate, lamda, betas, beta, epsilon
     optims = ['SGD', 'ADAM', 'ADADELTA', 'RMSPROP', 'ADAGRAD']
-    optim_name = optims[4]
+    optim_name = optims[1]
 
     #Results Container
     GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs = [], [], [], []
     results_container = GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs
 
-    #initialize both networks #should have the same initial weights
+    #initialize both networks #networks should have the same initial weights
     network_GSGD = nn.Sequential(
                       nn.Linear(d, n_hiddenA),
                       nn.BatchNorm1d(n_hiddenA),
@@ -76,7 +75,7 @@ def GSGD_ANN(filePath):
     cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD, optimizer_SGD, T, batch_size
     evaluate_algorithm(x, y, xts, yts, cache, results_container)
 
-    #collction of final results and graphs
+    #collection of final results and graphs
     generate_graphs(epochs, results_container)
     
 def evaluate_algorithm(x, y, xts, yts, cache, results_container):
@@ -178,7 +177,6 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
 
                     #All batch error differences are collected into ?(psi).
                     current_batch_error = prev_error - verloss
-
                     psi.append(current_batch_error)
 
                     prev_error = verloss
@@ -209,7 +207,6 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
 
                             #Get Verification Data Loss
                             verIDX = np.random.permutation(versetnum)[0]
-
                             verLoss  = getErrorMSE(verIDX, verset_x, verset_response, network, loss_function)
                             prev_error = verLoss
                     
@@ -220,8 +217,7 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
                     loopCount = -1
                     revisit = False
                     is_guided = False
-
-                    #If an interrupt request has been made, break out of the epoch loop
+                #If an interrupt request has been made, break out of the epoch loop
                 if StopTrainingFlag or is_done: 
                     break
         
@@ -264,16 +260,11 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
                 print_results_final(xts, network, yts, loss_function, type='original')
 
 if __name__ == '__main__':
-    # root = tk.Tk()
-    # root.withdraw()
-    # file_path = filedialog.askopenfilename(
-    #     initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
-    # print(file_path)
-    # if(file_path == ''):
-    #     print('File not found')
-
-    #below ccode is only used in environment not supporting GUI/Tkinter, comment the above code wen using this
-    #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
-    #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/BreastCancerDiagnostic.data'
-    file_path = 'C:/Users/avishek.ram/Documents/GitHub/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename(
+        initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
+    print(file_path)
+    if(file_path == ''):
+        print('File not found')
     GSGD_ANN(file_path)
