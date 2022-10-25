@@ -23,7 +23,7 @@ from main import *
 from data_layer import *
 
 def GSGD_ANN_experiment(filePath):
-    optims = ['RMSPROP', 'ADAGRAD','SGD', 'ADAM', 'ADADELTA'] 
+    optims = ['ADADELTA'] #'RMSPROP','ADAGRAD', 'SGD', 'ADAM',
 
     connlite = connect()
 
@@ -390,14 +390,15 @@ def experiment_results_final(inputVal, network, actual, loss_function, experimen
             curlite.close()
 
 if __name__ == '__main__':
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename(
-        initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
-    print(file_path)
-    if(file_path == ''):
-        print('File not found')
+    # root = tk.Tk()
+    # root.withdraw()
+    # file_path = filedialog.askopenfilename(
+    #     initialdir=os.path.dirname(os.path.realpath(__file__))+'/data', filetypes=[('data files', '.data')])
+    # print(file_path)
+    # if(file_path == ''):
+    #     print('File not found')
 
     #below ccode is only used in environment not supporting GUI/Tkinter, comment the above code wen using this
     #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
+    file_path = 'C:/Users/avishek.ram/Documents/GitHub/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
     GSGD_ANN_experiment(file_path)
