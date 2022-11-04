@@ -9,5 +9,5 @@ def getErrorMSE(idx, x, y, network, loss_function):
     data_y = y[idx]
     network.zero_grad()
     pred_y = network(data_x.to(device = this_device))
-    loss = loss_function(pred_y, data_y.to(device = this_device))
+    loss = loss_function(pred_y, data_y)
     return loss.item()

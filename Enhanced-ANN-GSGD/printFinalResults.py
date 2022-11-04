@@ -14,8 +14,8 @@ def print_results_final(inputVal, network, actual, loss_function, class_num, typ
     loss = loss_function(predicted, actual)
     overall_E = loss.item()
     specifity = torchmetrics.functional.specificity(preds=predicted, target=actual)
-    fpr, tpr, thresholds =  torchmetrics.functional.roc(preds=predicted, target=actual)
-    precision_plot, recall_plot, thresholds_prc =  torchmetrics.functional.precision_recall_curve(preds=predicted, target=actual)
+    fpr, tpr, thresholds =  torchmetrics.functional.roc(preds=predicted, target=actual, num_classes=class_num)
+    precision_plot, recall_plot, thresholds_prc =  torchmetrics.functional.precision_recall_curve(preds=predicted, target=actual, num_classes=class_num)
     conf_matrix = torchmetrics.functional.confusion_matrix(preds=predicted, target=actual, num_classes= class_num)
 
     print('\n\n--Results------'+ type)
@@ -26,7 +26,7 @@ def print_results_final(inputVal, network, actual, loss_function, class_num, typ
     #ROC Curve
     plt.figure()
     plt.plot([0.0, 1.0], [0.0, 1.0], linestyle='--')
-    plt.plot(fpr.cpu().data.numpy(), tpr.cpu().data.numpy(),'g--', label='ROC', marker='.', markersize='0.02')
+    plt.plot(fpr[0].cpu().data.numpy(), tpr[0].cpu().data.numpy(),'g--', label='ROC', marker='.', markersize='0.02')
     plt.title('ROC Curve')
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
@@ -36,7 +36,7 @@ def print_results_final(inputVal, network, actual, loss_function, class_num, typ
     no_skill = len(actual[actual==1]) / len(actual)
     plt.figure()
     plt.plot([0.0, 1.0], [no_skill,no_skill], linestyle='--')
-    plt.plot(recall_plot.cpu().data.numpy(), precision_plot.cpu().data.numpy(),'g--', label='Precision-Recall Curve', marker='.', markersize='0.02')
+    plt.plot(recall_plot[1].cpu().data.numpy(), precision_plot[1].cpu().data.numpy(),'g--', label='Precision-Recall Curve', marker='.', markersize='0.02')
     plt.title('Precision Recall Curve')
     plt.ylabel('Precision')
     plt.xlabel('Recall')

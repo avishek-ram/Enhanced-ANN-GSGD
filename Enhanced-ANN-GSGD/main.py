@@ -42,8 +42,8 @@ def GSGD_ANN(filePath):
     versetnum = 5 
     epochs = 5
     revisitNum = 15
-    batch_size = 40
-    out_dimension = 1 if NC == 2 else NC
+    batch_size = 3#40
+    out_dimension = NC#1 if NC == 2 else NC
 
     optim_params = l_rate, lamda, betas, beta, epsilon
     optims = ['SGD', 'ADAM', 'ADADELTA', 'RMSPROP', 'ADAGRAD']
@@ -61,8 +61,9 @@ def GSGD_ANN(filePath):
                       nn.Linear(n_hiddenA, n_hiddenB),
                       nn.BatchNorm1d(n_hiddenB),
                       nn.Sigmoid(),
-                      nn.Linear(n_hiddenB, out_dimension),
-                      nn.Sigmoid()).to(device=device)
+                      nn.Linear(n_hiddenB, out_dimension)
+                      #nn.Sigmoid()
+                      ).to(device=device)
     optimizer_GSGD = get_optimizer(network_GSGD, name=optim_name, cache= optim_params)
     network_SGD = copy.deepcopy(network_GSGD)
     optimizer_SGD = get_optimizer(network_SGD, name=optim_name, cache= optim_params)
@@ -80,7 +81,7 @@ def GSGD_ANN(filePath):
     generate_graphs(epochs, results_container)
     
 def evaluate_algorithm(x, y, xts, yts, cache, results_container):
-    loss_function = nn.MSELoss()
+    loss_function = nn.CrossEntropyLoss()#nn.MSELoss()
     StopTrainingFlag = False
     is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer, T, batch_size, NC = cache
     
@@ -94,14 +95,14 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
     x_batches, y_batches = [], []
     for input,labels in training_loader:
         x_batches.append(input)
-        y_batches.append(labels)
+        y_batches.append(labels.squeeze().to(dtype=torch.int64))
     # end
     x_batches = np.array(x_batches)
     y_batches = np.array(y_batches)
 
     #transform Validation data
     xts = torch.Tensor(xts).to(device)
-    yts = torch.Tensor(yts).to(device=device, dtype=torch.int)
+    yts = torch.Tensor(yts).squeeze().to(device=device, dtype=torch.int64)
 
     #Guided Training starts here
     if is_guided_approach:
@@ -221,8 +222,9 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
                 #If an interrupt request has been made, break out of the epoch loop
                 if StopTrainingFlag or is_done: 
                     break
-        
+            
             SR, E = validate(xts, network, yts, loss_function)
+
             print('Epoch : %s' % str(epoch+1))
             print('Accuracy: %s' % SR.item())
             print('Error Rate: %s' % E)

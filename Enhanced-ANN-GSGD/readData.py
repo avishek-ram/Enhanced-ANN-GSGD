@@ -20,7 +20,7 @@ def readData(file_path):
     apply_smote_oversampling = True
     
     if apply_smote_oversampling:   
-        oversample = SMOTE(random_state=42, k_neighbors = 1000)
+        oversample = SMOTE(random_state=42)
         x, y = oversample.fit_resample(X_train_old, Y_train_old)
     else:
         x = X_train_old
