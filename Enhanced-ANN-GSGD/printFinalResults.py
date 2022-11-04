@@ -1,8 +1,10 @@
 import numpy as np
 from validateSet import *
 import matplotlib.pyplot as plt
+from sklearn import metrics
+from torchmetrics.utilities.checks import _input_format_classification
             
-def print_results_final(inputVal, network, actual, loss_function, type = ''):
+def print_results_final(inputVal, network, actual, loss_function, class_num, type = ''):
     xval = inputVal
     
     #get predicted value
@@ -11,20 +13,14 @@ def print_results_final(inputVal, network, actual, loss_function, type = ''):
     accuracy = torchmetrics.functional.accuracy(predicted, actual)
     loss = loss_function(predicted, actual)
     overall_E = loss.item()
-    recall = torchmetrics.functional.recall(preds=predicted, target=actual)
-    precision = torchmetrics.functional.precision(preds=predicted, target=actual)
     specifity = torchmetrics.functional.specificity(preds=predicted, target=actual)
-    f1score = torchmetrics.functional.f1_score(preds=predicted, target=actual)
     fpr, tpr, thresholds =  torchmetrics.functional.roc(preds=predicted, target=actual)
     precision_plot, recall_plot, thresholds_prc =  torchmetrics.functional.precision_recall_curve(preds=predicted, target=actual)
+    conf_matrix = torchmetrics.functional.confusion_matrix(preds=predicted, target=actual, num_classes= class_num)
 
     print('\n\n--Results------'+ type)
     print('Classification Accuracy: ', accuracy.item())
     print('overall Error', overall_E)
-    print('Recall: ', recall.item())
-    print('Precision: ', precision.item())
-    print('Specificity: ', specifity.item())
-    print('F1-score: ', f1score.item())
     print('----------------')
 
     #ROC Curve
@@ -46,9 +42,18 @@ def print_results_final(inputVal, network, actual, loss_function, type = ''):
     plt.xlabel('Recall')
     plt.savefig('graphs/'+ type +'/Precision_recall_curve.png')
 
+    #Confusion Matrix and Classification report
+    print("\nClassification Report: " + type)
+    preds_tranformed, actual_transformed, mode = _input_format_classification(preds=predicted, target= actual)
+    print(metrics.classification_report(y_true = actual_transformed.cpu().data.numpy(), y_pred= preds_tranformed.cpu().data.numpy(), target_names=["Readmitted", "Not-Readmitted"]))
+    cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = conf_matrix.cpu().data.numpy(), display_labels = [True, False])
+    cm_display.plot()
+    plt.title('Confusion Matrix')
+    plt.savefig('graphs/' + type + '/confusion_matrix.png')
+    #plt.show()
+
 def generate_graphs(epochs, results_container):
     GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs = results_container
-
     Epocperm = [ i+1 for i in range(epochs)]
 
     # Error Convergence of GSGD and SGD
@@ -65,8 +70,8 @@ def generate_graphs(epochs, results_container):
 
     #Success rate GSGD and SGD over Epochs General
     plt.figure()
-    plt.plot(Epocperm, SGD_SRoverEpochs, label='SGD SR', linewidth=1)
-    plt.plot(Epocperm, GSGD_SRoverEpochs, 'r--', label='GSGD SR', linewidth=1)
+    plt.plot(Epocperm, SGD_SRoverEpochs, label='SGD Accuracy', linewidth=1)
+    plt.plot(Epocperm, GSGD_SRoverEpochs, 'r--', label='GSGD Accuracy', linewidth=1)
 
     plt.title('Classification Accuracy of GSGD and SGD')
     plt.xlabel("Epochs")

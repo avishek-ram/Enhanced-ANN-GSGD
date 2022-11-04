@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from imblearn.over_sampling import SMOTE
-from collections import Counter
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 
@@ -20,10 +19,9 @@ def readData(file_path):
     
     apply_smote_oversampling = True
     
-    if apply_smote_oversampling:
-        #Avishek- start oversampling minority class in training data only    
-        oversample = SMOTE()
-        x, y = oversample.fit_resample(X_train_old,Y_train_old)
+    if apply_smote_oversampling:   
+        oversample = SMOTE(random_state=42, k_neighbors = 1000)
+        x, y = oversample.fit_resample(X_train_old, Y_train_old)
     else:
         x = X_train_old
         y = Y_train_old

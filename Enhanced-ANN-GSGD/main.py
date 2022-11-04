@@ -43,6 +43,7 @@ def GSGD_ANN(filePath):
     epochs = 5
     revisitNum = 15
     batch_size = 40
+    out_dimension = 1 if NC == 2 else NC
 
     optim_params = l_rate, lamda, betas, beta, epsilon
     optims = ['SGD', 'ADAM', 'ADADELTA', 'RMSPROP', 'ADAGRAD']
@@ -60,19 +61,19 @@ def GSGD_ANN(filePath):
                       nn.Linear(n_hiddenA, n_hiddenB),
                       nn.BatchNorm1d(n_hiddenB),
                       nn.Sigmoid(),
-                      nn.Linear(n_hiddenB, 1),
+                      nn.Linear(n_hiddenB, out_dimension),
                       nn.Sigmoid()).to(device=device)
     optimizer_GSGD = get_optimizer(network_GSGD, name=optim_name, cache= optim_params)
     network_SGD = copy.deepcopy(network_GSGD)
     optimizer_SGD = get_optimizer(network_SGD, name=optim_name, cache= optim_params)
 
     #evaluate GSGD
-    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD, T, batch_size
+    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD, T, batch_size, NC
     evaluate_algorithm(x, y, xts, yts, cache, results_container)
 
     # evaluate SGD
     is_guided_approach = False
-    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD, optimizer_SGD, T, batch_size
+    cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD, optimizer_SGD, T, batch_size, NC
     evaluate_algorithm(x, y, xts, yts, cache, results_container)
 
     #collection of final results and graphs
@@ -81,7 +82,7 @@ def GSGD_ANN(filePath):
 def evaluate_algorithm(x, y, xts, yts, cache, results_container):
     loss_function = nn.MSELoss()
     StopTrainingFlag = False
-    is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer, T, batch_size = cache
+    is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer, T, batch_size, NC = cache
     
     GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs  = results_container
 
@@ -230,7 +231,7 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
             GSGD_SRoverEpochs.append(SR.item())
             GSGD_EoverEpochs.append(E)
 
-        print_results_final(xts, network, yts, loss_function, type='guided')
+        print_results_final(xts, network, yts, loss_function, NC, type='guided')
 
     else: #not guided training
         print("\n\n-----Not Guided Training------")
@@ -257,7 +258,7 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
             SGD_EoverEpochs.append(E)
 
             if(epoch == epochs-1):
-                print_results_final(xts, network, yts, loss_function, type='original')
+                print_results_final(xts, network, yts, loss_function, NC, type='original')
 
 if __name__ == '__main__':
     root = tk.Tk()

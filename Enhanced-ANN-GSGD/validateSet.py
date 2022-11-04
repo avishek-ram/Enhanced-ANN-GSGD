@@ -18,14 +18,6 @@ def validate(inputVal, network, actual, loss_function):
     E = loss.item()   
     return SR, E  
 
-# Calculate accuracy percentage
-def accuracy_metric(actual, predicted):
-	correct = 0
-	for i in range(len(actual)):
-		if actual[i][0] == torch.round(predicted[i][0]).float():
-			correct += 1
-	return correct
-
 def get_predictions(network, xts):
     network.zero_grad()
     pred_y = network(xts)
