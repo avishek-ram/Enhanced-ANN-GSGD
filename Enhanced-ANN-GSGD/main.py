@@ -20,12 +20,12 @@ from torch.utils.data import DataLoader, TensorDataset
 
 seed(1)
 np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning) 
-np.warnings.filterwarnings('ignore', category=FutureWarning) 
+np.warnings.filterwarnings('ignore', category=FutureWarning)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def GSGD_ANN(filePath):
+def GSGD_ANN(filePath, apply_smote):
     # reading data, normalize and spliting into train/test
-    NC, x, y, N, d, xts, yts = readData(filePath)
+    NC, x, y, N, d, xts, yts = readData(filePath, apply_smote)
     
     #model parameters
     l_rate =    0.0035465229341384616
@@ -42,8 +42,8 @@ def GSGD_ANN(filePath):
     versetnum = 5 
     epochs = 5
     revisitNum = 15
-    batch_size = 3#40
-    out_dimension = NC#1 if NC == 2 else NC
+    batch_size = 40
+    out_dimension = NC
 
     optim_params = l_rate, lamda, betas, beta, epsilon
     optims = ['SGD', 'ADAM', 'ADADELTA', 'RMSPROP', 'ADAGRAD']
@@ -62,7 +62,6 @@ def GSGD_ANN(filePath):
                       nn.BatchNorm1d(n_hiddenB),
                       nn.Sigmoid(),
                       nn.Linear(n_hiddenB, out_dimension)
-                      #nn.Sigmoid()
                       ).to(device=device)
     optimizer_GSGD = get_optimizer(network_GSGD, name=optim_name, cache= optim_params)
     network_SGD = copy.deepcopy(network_GSGD)
@@ -270,4 +269,5 @@ if __name__ == '__main__':
     print(file_path)
     if(file_path == ''):
         print('File not found')
-    GSGD_ANN(file_path)
+    apply_smote = True
+    GSGD_ANN(file_path, apply_smote)

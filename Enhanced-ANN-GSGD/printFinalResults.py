@@ -7,6 +7,12 @@ from torchmetrics.utilities.checks import _input_format_classification
 def print_results_final(inputVal, network, actual, loss_function, class_num, type = ''):
     xval = inputVal
     
+    #only used for diabetes dataset 2class and 3 class else set to None
+    #labels = None
+    #labels = ["Not", "Readmitted"]
+    labels = ["NO", "<30", ">30"]
+    #end
+
     #get predicted value
     predicted = get_predictions(network, xval)
     
@@ -45,8 +51,8 @@ def print_results_final(inputVal, network, actual, loss_function, class_num, typ
     #Confusion Matrix and Classification report
     print("\nClassification Report: " + type)
     preds_tranformed, actual_transformed, mode = _input_format_classification(preds=predicted, target= actual)
-    print(metrics.classification_report(y_true = actual_transformed.cpu().data.numpy(), y_pred= preds_tranformed.cpu().data.numpy(), target_names=["Readmitted", "Not-Readmitted"]))
-    cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = conf_matrix.cpu().data.numpy(), display_labels = [True, False])
+    print(metrics.classification_report(y_true = actual_transformed.cpu().data.numpy(), y_pred= preds_tranformed.cpu().data.numpy(), target_names=labels))
+    cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = conf_matrix.cpu().data.numpy(), display_labels = labels)
     cm_display.plot()
     plt.title('Confusion Matrix')
     plt.savefig('graphs/' + type + '/confusion_matrix.png')
