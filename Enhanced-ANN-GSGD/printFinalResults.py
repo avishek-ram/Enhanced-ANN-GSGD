@@ -8,9 +8,9 @@ def print_results_final(inputVal, network, actual, loss_function, class_num, typ
     xval = inputVal
     
     #only used for diabetes dataset 2class and 3 class else set to None
-    #labels = None
+    labels = None
     #labels = ["Not", "Readmitted"]
-    labels = ["NO", "<30", ">30"]
+    #labels = ["NO", "<30", ">30"]
     #end
 
     #get predicted value

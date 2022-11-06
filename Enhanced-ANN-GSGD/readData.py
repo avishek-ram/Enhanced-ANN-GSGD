@@ -18,7 +18,7 @@ def readData(file_path, apply_smote = False):
     X_train_old, xts, Y_train_old, yts = train_test_split(data.iloc[:, :-1], data[[d-1]] , test_size=0.20, random_state=0)
         
     if apply_smote:   
-        oversample = SMOTE(random_state=42)
+        oversample = SMOTE(random_state=42, k_neighbors=2)
         x, y = oversample.fit_resample(X_train_old, Y_train_old)
     else:
         x = X_train_old

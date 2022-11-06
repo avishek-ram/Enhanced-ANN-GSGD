@@ -39,7 +39,7 @@ def GSGD_ANN(filePath, apply_smote):
     T = math.inf #number of batches to use in training. set to math.inf to use all batches
     is_guided_approach = True
     rho = 20
-    versetnum = 5 
+    versetnum = 5
     epochs = 5
     revisitNum = 15
     batch_size = 40
@@ -80,12 +80,12 @@ def GSGD_ANN(filePath, apply_smote):
     generate_graphs(epochs, results_container)
     
 def evaluate_algorithm(x, y, xts, yts, cache, results_container):
-    loss_function = nn.CrossEntropyLoss()#nn.MSELoss()
+    loss_function = nn.CrossEntropyLoss()
     StopTrainingFlag = False
     is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer, T, batch_size, NC = cache
     
     GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs  = results_container
-
+    
     #transform into tensors and setup dataLoader with mini batches
     my_dataset = TensorDataset(torch.Tensor(x), torch.Tensor(y))
     training_loader = DataLoader(my_dataset, batch_size=batch_size)
