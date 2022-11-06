@@ -1,5 +1,4 @@
 # Programmer: Avishek Ram
-# email: avishekram30@gmail.com
 import numpy as np
 from math import exp
 import torch
