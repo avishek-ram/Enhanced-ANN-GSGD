@@ -20,6 +20,7 @@ import torch.nn as nn
 import sqlite3
 from sqlite3 import Error
 from main import *
+from torchmetrics.utilities.checks import _input_format_classification
 from data_layer import *
 
 def GSGD_ANN_experiment(filePath):
@@ -92,12 +93,12 @@ def GSGD_ANN_experiment(filePath):
                 experiment_param = optim_name, run+1, connlite
 
                 #evaluate GSGD
-                cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD, T, batch_size
+                cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_GSGD, optimizer_GSGD, T, batch_size, NC
                 evaluate_algorithm_experiment(x, y, xts, yts, cache, results_container, experiment_param)
 
                 # evaluate SGD
                 is_guided_approach = False
-                cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD, optimizer_SGD, T, batch_size
+                cache = is_guided_approach, rho, versetnum,epochs, revisitNum, N, network_SGD, optimizer_SGD, T, batch_size, NC
                 evaluate_algorithm_experiment(x, y, xts, yts, cache, results_container, experiment_param)
 
                 #collction of final results and graphs
@@ -136,7 +137,7 @@ def generate_graphs_experiment(epochs, results_container, run, optim_name):
 def evaluate_algorithm_experiment(x, y, xts, yts, cache, results_container, experiment_param):
     loss_function = nn.MSELoss()
     StopTrainingFlag = False
-    is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer, T, batch_size = cache
+    is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer, T, batch_size, NC = cache
     
     GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs  = results_container
 
@@ -288,7 +289,7 @@ def evaluate_algorithm_experiment(x, y, xts, yts, cache, results_container, expe
             GSGD_SRoverEpochs.append(SR.item())
             GSGD_EoverEpochs.append(E)
 
-        experiment_results_final(xts, network, yts, loss_function, experiment_param, type='guided')
+        experiment_results_final(xts, network, yts, loss_function, experiment_param, NC, type='guided')
 
     else: #not guided training
         print("Not Guided Training started")
@@ -319,52 +320,69 @@ def evaluate_algorithm_experiment(x, y, xts, yts, cache, results_container, expe
                 print('Epoch : %s' % str(epoch+1))
                 print('Accuracy: %s' % SR.item())
                 print('Error Rate: %s' % E)
-                experiment_results_final(xts, network, yts, loss_function, experiment_param, type='original')
+                experiment_results_final(xts, network, yts, loss_function, experiment_param, NC, type='original')
 
-def experiment_results_final(inputVal, network, actual, loss_function, experiment_param,  type = ''):
+def experiment_results_final(inputVal, network, actual, loss_function, experiment_param, class_num,  type = ''):
     optim_name, run, connlite = experiment_param
     xval = inputVal
     
+    random_colors = ['red', 'blue', 'green', 'yellow', 'orange','pink', 'purple', 'brown', 'black', 'grey' ]
+    
+    labels = [str(i) for i in range(class_num)]  #this is default
+    
+    #only used for diabetes dataset 2class and 3 class else use the above
+    #labels = ["NO", "Readmitted"]
+    #labels = ["NO", "<30", ">30"]
+    #end
+
     #get predicted value
     predicted = get_predictions(network, xval)
     
     accuracy = torchmetrics.functional.accuracy(predicted, actual)
     loss = loss_function(predicted, actual)
     overall_E = loss.item()
-    recall = torchmetrics.functional.recall(preds=predicted, target=actual)
-    precision = torchmetrics.functional.precision(preds=predicted, target=actual)
     specifity = torchmetrics.functional.specificity(preds=predicted, target=actual)
-    f1score = torchmetrics.functional.f1_score(preds=predicted, target=actual)
-    fpr, tpr, thresholds =  torchmetrics.functional.roc(preds=predicted, target=actual)
-    precision_plot, recall_plot, thresholds_prc =  torchmetrics.functional.precision_recall_curve(preds=predicted, target=actual)
+    fpr, tpr, thresholds =  torchmetrics.functional.roc(preds=predicted, target=actual, num_classes=class_num)
+    precision_plot, recall_plot, thresholds_prc =  torchmetrics.functional.precision_recall_curve(preds=predicted, target=actual, num_classes=class_num)
+    conf_matrix = torchmetrics.functional.confusion_matrix(preds=predicted, target=actual, num_classes= class_num)
 
     print('\n\n--Results------'+ type)
     print('Classification Accuracy: ', accuracy.item())
     print('overall Error', overall_E)
-    print('Recall: ', recall.item())
-    print('Precision: ', precision.item())
-    print('Specificity: ', specifity.item())
-    print('F1-score: ', f1score.item())
     print('----------------')
 
     #ROC Curve
     plt.figure()
     plt.plot([0.0, 1.0], [0.0, 1.0], linestyle='--')
-    plt.plot(fpr.cpu().data.numpy(), tpr.cpu().data.numpy(),'g--', label='ROC', marker='.', markersize='0.02')
+    for ind in range(len(labels)):
+        plt.plot(fpr[ind].cpu().data.numpy(), tpr[ind].cpu().data.numpy(),'g--', color = random_colors[ind], label=labels[ind], marker='.', markersize='0.02')
     plt.title('ROC Curve')
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
+    plt.legend(loc=2)
     plt.savefig('graphs/'+ optim_name + '_run_'+ str(run) + type +'_roc_curve.png')
 
     #precision Recall Curve
     no_skill = len(actual[actual==1]) / len(actual)
     plt.figure()
     plt.plot([0.0, 1.0], [no_skill,no_skill], linestyle='--')
-    plt.plot(recall_plot.cpu().data.numpy(), precision_plot.cpu().data.numpy(),'g--', label='Precision-Recall Curve', marker='.', markersize='0.02')
+    for ind in range(len(labels)):
+        plt.plot(recall_plot[ind].cpu().data.numpy(), precision_plot[ind].cpu().data.numpy(),  'g--', color = random_colors[ind], label=labels[ind], marker='.', markersize='0.02')
     plt.title('Precision Recall Curve')
     plt.ylabel('Precision')
     plt.xlabel('Recall')
+    plt.legend(loc=2)
     plt.savefig('graphs/'+ optim_name + '_run_'+ str(run) + type +'_precision_recall_curve.png')
+
+    #Confusion Matrix and Classification report
+    print("\nClassification Report: " + type)
+    preds_tranformed, actual_transformed, mode = _input_format_classification(preds=predicted, target= actual)
+    print(metrics.classification_report(y_true = actual_transformed.cpu().data.numpy(), y_pred= preds_tranformed.cpu().data.numpy(), target_names=labels))
+    cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = conf_matrix.cpu().data.numpy(), display_labels = labels)
+    cm_display.plot()
+    plt.title('Confusion Matrix')
+    plt.savefig('graphs/'+ optim_name + '_run_'+ str(run) + type + '_confusion_matrix.png')
+    #plt.show()
 
     with connlite:
             curlite = connlite.cursor()
@@ -374,16 +392,12 @@ def experiment_results_final(inputVal, network, actual, loss_function, experimen
                     type,
                     run,
                     sr,
-                    loss,
-                    recall,
-                    precision,
-                    specificity,
-                    f1_score
+                    loss
                 )
                 VALUES
                 
                 """
-            query += f"""('{optim_name}','{type}', '{run}', '{accuracy.item()}', '{overall_E}', '{recall.item()}', '{precision.item()}', '{specifity.item()}','{f1score.item()}')"""
+            query += f"""('{optim_name}','{type}', '{run}', '{accuracy.item()}', '{overall_E}')"""
 
             curlite.execute(query)
             connlite.commit()
@@ -400,5 +414,5 @@ if __name__ == '__main__':
 
     #below ccode is only used in environment not supporting GUI/Tkinter, comment the above code wen using this
     #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
-    file_path = 'C:/Users/avishek.ram/Documents/GitHub/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
+    file_path = 'C:/Users/avishek.ram/Documents/GitHub/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_3class.data'
     GSGD_ANN_experiment(file_path)
