@@ -24,7 +24,7 @@ from torchmetrics.utilities.checks import _input_format_classification
 from data_layer import *
 
 def GSGD_ANN_experiment(filePath):
-    optims = ['ADADELTA'] #'RMSPROP','ADAGRAD', 'SGD', 'ADAM',
+    optims = ['RMSPROP', 'ADAGRAD','SGD', 'ADAM']  #'ADADELTA',
 
     connlite = connect()
 
@@ -33,7 +33,7 @@ def GSGD_ANN_experiment(filePath):
             optim_name = optims[optim_idx]
             for run in range(50):
                 # reading data, normalize and spliting into train/test
-                NC, x, y, N, d, xts, yts = readData(filePath)
+                NC, x, y, N, d, xts, yts = readData(filePath, apply_smote = True)
     
                 #model parameters
                 l_rate =   0.02001229522561126#0.019987676959698759#0.0001#0.0002314354244#9.309681215145698e-15#3.0952770286463463e-07#0.0003314354244#0.00011852732093870824#0.00010926827346753853 #0.0002814354245#0.0002216960781458557#0.0002314354244 #0.000885 #0.061 #0.00025 #0.5
@@ -51,6 +51,7 @@ def GSGD_ANN_experiment(filePath):
                 epochs = 20#27#15
                 revisitNum = 15
                 batch_size = 40#812#122#468#300#891#32
+                out_dimension = NC
 
                 #temporary experiment setup
                 if(optim_name == 'RMSPROP'):
@@ -84,8 +85,8 @@ def GSGD_ANN_experiment(filePath):
                       nn.Linear(n_hiddenA, n_hiddenB),
                       nn.BatchNorm1d(n_hiddenB),
                       nn.Sigmoid(),
-                      nn.Linear(n_hiddenB, 1),
-                      nn.Sigmoid()).to(device=device)
+                      nn.Linear(n_hiddenB, out_dimension)
+                      ).to(device=device)
                 optimizer_GSGD = get_optimizer(network_GSGD, name=optim_name, cache= optim_params)
                 network_SGD = copy.deepcopy(network_GSGD)
                 optimizer_SGD = get_optimizer(network_SGD, name=optim_name, cache= optim_params)
@@ -135,7 +136,7 @@ def generate_graphs_experiment(epochs, results_container, run, optim_name):
     plt.savefig('graphs/' + str(optim_name)+ '_run_'+ str(run) + '_success_rate_general.png')
   
 def evaluate_algorithm_experiment(x, y, xts, yts, cache, results_container, experiment_param):
-    loss_function = nn.MSELoss()
+    loss_function = nn.CrossEntropyLoss()
     StopTrainingFlag = False
     is_guided_approach, rho, versetnum, epochs, revisitNum, N, network, optimizer, T, batch_size, NC = cache
     
@@ -143,22 +144,22 @@ def evaluate_algorithm_experiment(x, y, xts, yts, cache, results_container, expe
 
     #transform into tensors and setup dataLoader with mini batches
     my_dataset = TensorDataset(torch.Tensor(x), torch.Tensor(y))
-    training_loader = DataLoader(my_dataset, batch_size=batch_size)
+    training_loader = DataLoader(my_dataset, batch_size=batch_size, drop_last= True)
 
     #get mini batches
     x_batches, y_batches = [], []
     for input,labels in training_loader:
         x_batches.append(input)
-        y_batches.append(labels)
+        y_batches.append(labels.squeeze().to(dtype=torch.int64))
     # end
     x_batches = np.array(x_batches)
     y_batches = np.array(y_batches)
 
     #transform Validation data
     xts = torch.Tensor(xts).to(device)
-    yts = torch.Tensor(yts).to(device=device, dtype=torch.int)
+    yts = torch.Tensor(yts).squeeze().to(device=device, dtype=torch.int64)
 
-     #Guided Training starts here
+    #Guided Training starts here
     if is_guided_approach:
         prev_error = math.inf #set initial error to very large number
         for epoch in range(epochs):
@@ -328,10 +329,10 @@ def experiment_results_final(inputVal, network, actual, loss_function, experimen
     
     random_colors = ['red', 'blue', 'green', 'yellow', 'orange','pink', 'purple', 'brown', 'black', 'grey' ]
     
-    labels = [str(i) for i in range(class_num)]  #this is default
+    #labels = [str(i) for i in range(class_num)]  #this is default
     
     #only used for diabetes dataset 2class and 3 class else use the above
-    #labels = ["NO", "Readmitted"]
+    labels = ["NOT", "Readmitted"]
     #labels = ["NO", "<30", ">30"]
     #end
 
@@ -355,7 +356,7 @@ def experiment_results_final(inputVal, network, actual, loss_function, experimen
     plt.figure()
     plt.plot([0.0, 1.0], [0.0, 1.0], linestyle='--')
     for ind in range(len(labels)):
-        plt.plot(fpr[ind].cpu().data.numpy(), tpr[ind].cpu().data.numpy(),'g--', color = random_colors[ind], label=labels[ind], marker='.', markersize='0.02')
+        plt.plot(fpr[ind].cpu().data.numpy(), tpr[ind].cpu().data.numpy(), color = random_colors[ind], label=labels[ind], marker='.', markersize='0.02')
     plt.title('ROC Curve')
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
@@ -367,7 +368,7 @@ def experiment_results_final(inputVal, network, actual, loss_function, experimen
     plt.figure()
     plt.plot([0.0, 1.0], [no_skill,no_skill], linestyle='--')
     for ind in range(len(labels)):
-        plt.plot(recall_plot[ind].cpu().data.numpy(), precision_plot[ind].cpu().data.numpy(),  'g--', color = random_colors[ind], label=labels[ind], marker='.', markersize='0.02')
+        plt.plot(recall_plot[ind].cpu().data.numpy(), precision_plot[ind].cpu().data.numpy(), color = random_colors[ind], label=labels[ind], marker='.', markersize='0.02')
     plt.title('Precision Recall Curve')
     plt.ylabel('Precision')
     plt.xlabel('Recall')
@@ -377,12 +378,16 @@ def experiment_results_final(inputVal, network, actual, loss_function, experimen
     #Confusion Matrix and Classification report
     print("\nClassification Report: " + type)
     preds_tranformed, actual_transformed, mode = _input_format_classification(preds=predicted, target= actual)
-    print(metrics.classification_report(y_true = actual_transformed.cpu().data.numpy(), y_pred= preds_tranformed.cpu().data.numpy(), target_names=labels))
+    report = metrics.classification_report(y_true = actual_transformed.cpu().data.numpy(), y_pred= preds_tranformed.cpu().data.numpy(), target_names=labels,output_dict=True)
+    report_df = pd.DataFrame(report).transpose()
+    report_df.to_csv('graphs/'+ optim_name + '_run_'+ str(run) + type +'_classification_report.csv')
     cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = conf_matrix.cpu().data.numpy(), display_labels = labels)
     cm_display.plot()
     plt.title('Confusion Matrix')
     plt.savefig('graphs/'+ optim_name + '_run_'+ str(run) + type + '_confusion_matrix.png')
     #plt.show()
+
+    plt.close('all')
 
     with connlite:
             curlite = connlite.cursor()
@@ -414,5 +419,5 @@ if __name__ == '__main__':
 
     #below ccode is only used in environment not supporting GUI/Tkinter, comment the above code wen using this
     #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
-    file_path = 'C:/Users/avishek.ram/Documents/GitHub/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_3class.data'
+    file_path = 'C:/Users/avishek.ram/Documents/GitHub/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
     GSGD_ANN_experiment(file_path)

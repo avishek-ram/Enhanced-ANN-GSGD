@@ -28,7 +28,7 @@ def GSGD_ANN(filePath, apply_smote):
     NC, x, y, N, d, xts, yts = readData(filePath, apply_smote)
     
     #model parameters
-    l_rate =    0.0035465229341384616
+    l_rate =    0.18018122514569 #0.0035465229341384616
     n_hiddenA = 30
     n_hiddenB = 5
     lamda =  1e-06
@@ -47,7 +47,7 @@ def GSGD_ANN(filePath, apply_smote):
 
     optim_params = l_rate, lamda, betas, beta, epsilon
     optims = ['SGD', 'ADAM', 'ADADELTA', 'RMSPROP', 'ADAGRAD']
-    optim_name = optims[1]
+    optim_name = optims[0]
 
     #Results Container
     GSGD_SRoverEpochs, GSGD_EoverEpochs, SGD_SRoverEpochs, SGD_EoverEpochs = [], [], [], []
@@ -88,7 +88,7 @@ def evaluate_algorithm(x, y, xts, yts, cache, results_container):
     
     #transform into tensors and setup dataLoader with mini batches
     my_dataset = TensorDataset(torch.Tensor(x), torch.Tensor(y))
-    training_loader = DataLoader(my_dataset, batch_size=batch_size)
+    training_loader = DataLoader(my_dataset, batch_size=batch_size, drop_last= True)
 
     #get mini batches
     x_batches, y_batches = [], []

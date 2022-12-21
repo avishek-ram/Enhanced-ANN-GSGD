@@ -8,10 +8,10 @@ def print_results_final(inputVal, network, actual, loss_function, class_num, typ
     xval = inputVal
     random_colors = ['red', 'blue', 'green', 'yellow', 'orange','pink', 'purple', 'brown', 'black', 'grey' ]
     
-    labels = [str(i) for i in range(class_num)]  #this is default
+    #labels = [str(i) for i in range(class_num)]  #this is default
     
     #only used for diabetes dataset 2class and 3 class else use the above
-    #labels = ["Not", "Readmitted"]
+    labels = ["Not", "Readmitted"]
     #labels = ["NO", "<30", ">30"]
     #end
 
@@ -35,7 +35,7 @@ def print_results_final(inputVal, network, actual, loss_function, class_num, typ
     plt.figure()
     plt.plot([0.0, 1.0], [0.0, 1.0], linestyle='--')
     for ind in range(len(labels)):
-        plt.plot(fpr[ind].cpu().data.numpy(), tpr[ind].cpu().data.numpy(),'g--', color = random_colors[ind], label=labels[ind], marker='.', markersize='0.02')
+        plt.plot(fpr[ind].cpu().data.numpy(), tpr[ind].cpu().data.numpy(), color = random_colors[ind], label=labels[ind], marker='.', markersize='0.02')
     plt.title('ROC Curve')
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
@@ -47,7 +47,7 @@ def print_results_final(inputVal, network, actual, loss_function, class_num, typ
     plt.figure()
     plt.plot([0.0, 1.0], [no_skill,no_skill], linestyle='--')
     for ind in range(len(labels)):
-        plt.plot(recall_plot[ind].cpu().data.numpy(), precision_plot[ind].cpu().data.numpy(),  'g--', color = random_colors[ind], label=labels[ind], marker='.', markersize='0.02')
+        plt.plot(recall_plot[ind].cpu().data.numpy(), precision_plot[ind].cpu().data.numpy(), color = random_colors[ind], label=labels[ind], marker='.', markersize='0.02')
     plt.title('Precision Recall Curve')
     plt.ylabel('Precision')
     plt.xlabel('Recall')
