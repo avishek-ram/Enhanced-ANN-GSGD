@@ -24,7 +24,7 @@ from torchmetrics.utilities.checks import _input_format_classification
 from data_layer import *
 
 def GSGD_ANN_experiment(filePath):
-    optims = ['RMSPROP', 'ADAGRAD','SGD', 'ADAM']  #'ADADELTA',
+    optims = ['MOMENTUM']  #'ADADELTA', 'RMSPROP', 'ADAGRAD','SGD', 'ADAM'
 
     connlite = connect()
 
@@ -69,6 +69,9 @@ def GSGD_ANN_experiment(filePath):
                 elif(optim_name == 'ADADELTA'):
                     l_rate =  0.2008229522561126
                     epochs = 20
+                elif(optim_name == 'MOMENTUM'):
+                    l_rate =  0.18165172319266
+                    epochs = 5
                 #end
 
                 optim_params = l_rate, lamda, betas, beta, epsilon
@@ -332,8 +335,8 @@ def experiment_results_final(inputVal, network, actual, loss_function, experimen
     #labels = [str(i) for i in range(class_num)]  #this is default
     
     #only used for diabetes dataset 2class and 3 class else use the above
-    labels = ["NOT", "Readmitted"]
-    #labels = ["NO", "<30", ">30"]
+    #labels = ["NOT", "Readmitted"]
+    labels = ["NO", "<30", ">30"]
     #end
 
     #get predicted value
@@ -419,5 +422,5 @@ if __name__ == '__main__':
 
     #below ccode is only used in environment not supporting GUI/Tkinter, comment the above code wen using this
     #file_path = '/home/paperspace/Documents/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
-    file_path = 'C:/Users/avishek.ram/Documents/GitHub/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_2class.data'
+    file_path = 'C:/Users/avishek.ram/Documents/GitHub/Enhanced-ANN-GSGD/Enhanced-ANN-GSGD/data/diabetes_readmission_3class.data'
     GSGD_ANN_experiment(file_path)

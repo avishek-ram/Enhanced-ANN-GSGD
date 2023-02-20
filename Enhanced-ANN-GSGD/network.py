@@ -25,3 +25,5 @@ def get_optimizer(network, name, cache):
         return torch.optim.RMSprop(network.parameters(), lr=l_rate, eps= epsilon, weight_decay = lamda)
     elif(name == 'ADAGRAD'):
         return torch.optim.Adagrad(network.parameters(), lr=l_rate, eps= epsilon, weight_decay = lamda)
+    elif(name == 'MOMENTUM'):
+        return torch.optim.SGD(network.parameters(), lr=l_rate, weight_decay= lamda, momentum=0.9)
