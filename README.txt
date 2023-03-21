@@ -1,4 +1,5 @@
 # Enhanced-ANN-GSGD
+#use branch: pytorch_version
 
 Read Me for ANN-GSGD
 Paper: A Guided Neural Network Approach to Predict Early Readmission of Diabetic Patients
